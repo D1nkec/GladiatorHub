@@ -1,0 +1,38 @@
+﻿@* 
+<h2>PvP Leaderboard</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Player Name</th>
+            <th>Rating</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var entry in Model)
+        {
+            <tr>
+                <td>@entry.PlayerName</td>
+                <td>@entry.Rating</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="pagination">
+    @if (Model.Count == 20)
+    {
+        <a href="/leaderboard?page=@(Model.Page + 1)">Next</a>
+    }
+</div>
+<div class="pagination">
+    @if (Model.Page > 1)
+    {
+        <a href="/leaderboard?pvpSeasonId=33&pvpBracket=@Model.PvpBracket&page=@(Model.Page - 1)">Previous</a>
+    }
+
+    @if (Model.Count == 20)
+    {
+        <a href="/leaderboard?pvpSeasonId=33&pvpBracket=@Model.PvpBracket&page=@(Model.Page + 1)">Next</a>
+    }
+</div> 
+ *@

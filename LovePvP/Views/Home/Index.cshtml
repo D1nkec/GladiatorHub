@@ -2,6 +2,21 @@
     ViewData["Title"] = "Home Page";
 }
 
+<h1 class="text-center">Search for a Player</h1>
 
-    <a class="nav-link" href="@Url.Action("Search", "Player")">Search for Player</a>
+<div class="search-container">
+    <form method="post" asp-action="PvpSummary">
+        <div class="form-group">
+            <label for="realmSlug" class="form-label">Realm Name</label>
+            <input type="text" class="form-control search-input" id="realmSlug" name="realmSlug" placeholder="Enter realm name" required />
+        </div>
+
+        <div class="form-group">
+            <label for="characterName" class="form-label">Character Name</label>
+            <input type="text" class="form-control search-input" id="characterName" name="characterName" placeholder="Enter character name" required />
+        </div>
+
+        <button type="submit" class="btn btn-primary search-button">Search</button>
+    </form>
+</div>
 

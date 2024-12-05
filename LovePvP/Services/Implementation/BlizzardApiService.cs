@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using LovePvP.Models;
+using GladiatorHub.Models;
 
 public class BlizzardApiService
 {
@@ -121,6 +122,38 @@ public class BlizzardApiService
         return jsonDoc.RootElement.GetProperty("rating").GetInt32();
     }
 
+    public async Task<List<PvpLeaderboardModel>> GetPvpLeaderboardAsync(int pvpSeasonId, string pvpBracket, int page = 1, int pageSize = 20)
+    {
+        var accessToken = await GetAccessTokenAsync();
+
+        // Sastavljanje URL-a za Blizzard API
+        var url = $"{_configuration["Blizzard:ApiBaseUrl"]}/pvp/leaderboards/{pvpBracket}?region=us&pvpSeasonId={pvpSeasonId}&namespace=dynamic-us&page={page}&pageSize={pageSize}&locale=en_US";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var jsonString = await response.Content.ReadAsStringAsync();
+        var jsonDoc = JsonDocument.Parse(jsonString);
+
+        var leaderboard = new List<PvpLeaderboardModel>();
+
+        foreach (var entry in jsonDoc.RootElement.GetProperty("entries").EnumerateArray())
+        {
+            var playerName = entry.GetProperty("player").GetProperty("name").GetString();
+            var rating = entry.GetProperty("rating").GetInt32();
+
+            leaderboard.Add(new PvpLeaderboardModel
+            {
+                PlayerName = playerName,
+                Rating = rating
+            });
+        }
+
+        return leaderboard;
+    }
 
 }
 
