@@ -1,4 +1,4 @@
-﻿using GladiatorHub.Models;
+﻿
 using Microsoft.AspNetCore.Mvc;
 
 namespace GladiatorHub.Controllers
@@ -14,27 +14,16 @@ namespace GladiatorHub.Controllers
             _blizzardApiService = blizzardApiService;
         }
 
+        [HttpGet("2v2")]
+        public async Task<IActionResult> TwoVsTwo()
+        {
+            var leaderboard = await _blizzardApiService.GetPvpLeaderboardAsync(33, "2v2");
+            var entries = leaderboard.Entries; // Izdvojite samo listu unosa
+
+            return View(entries); // Poslati samo listu unosa
+        }
 
 
-        //[HttpGet("2v2")]
-        //public async Task<IActionResult> TwoVsTwo(int page = 1, int pvpSeasonId = 33, string pvpBracket = "2v2")
-        //{
-        //    const int pageSize = 20;
-        //    var leaderboardData = await _blizzardApiService.GetPvpLeaderboardAsync(pvpSeasonId, pvpBracket, page, pageSize);
-
-        //    var totalPages = (int)Math.Ceiling((double)leaderboardData.TotalCount / pageSize);
-
-        //    var viewModel = new PvpLeaderboardViewModel
-        //    {
-        //        Leaderboard = leaderboardData.Leaderboard,
-        //        CurrentPage = page,
-        //        TotalPages = totalPages,
-        //        PvpBracket = pvpBracket,
-        //        PvpSeasonId = pvpSeasonId
-        //    };
-
-        //    return View(viewModel);
-        //}
 
 
         [HttpGet("3v3")]

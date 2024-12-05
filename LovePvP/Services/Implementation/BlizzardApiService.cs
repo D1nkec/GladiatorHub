@@ -2,7 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using LovePvP.Models;
-using GladiatorHub.Models;
+
 
 public class BlizzardApiService
 {
@@ -122,12 +122,10 @@ public class BlizzardApiService
         return jsonDoc.RootElement.GetProperty("rating").GetInt32();
     }
 
-    public async Task<List<PvpLeaderboardModel>> GetPvpLeaderboardAsync(int pvpSeasonId, string pvpBracket, int page = 1, int pageSize = 20)
+    public async Task<PvpLeaderboardModel> GetPvpLeaderboardAsync(int pvpSeasonId, string pvpBracket)
     {
         var accessToken = await GetAccessTokenAsync();
-
-        // Sastavljanje URL-a za Blizzard API
-        var url = $"{_configuration["Blizzard:ApiBaseUrl"]}/pvp/leaderboards/{pvpBracket}?region=us&pvpSeasonId={pvpSeasonId}&namespace=dynamic-us&page={page}&pageSize={pageSize}&locale=en_US";
+        var url = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/pvp-season/{pvpSeasonId}/pvp-leaderboard/{pvpBracket}?namespace=dynamic-us&locale=en_US";
 
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
@@ -138,22 +136,48 @@ public class BlizzardApiService
         var jsonString = await response.Content.ReadAsStringAsync();
         var jsonDoc = JsonDocument.Parse(jsonString);
 
-        var leaderboard = new List<PvpLeaderboardModel>();
-
-        foreach (var entry in jsonDoc.RootElement.GetProperty("entries").EnumerateArray())
+        var leaderboard = new PvpLeaderboardModel
         {
-            var playerName = entry.GetProperty("player").GetProperty("name").GetString();
-            var rating = entry.GetProperty("rating").GetInt32();
+            SeasonId = pvpSeasonId,
+            Bracket = pvpBracket
+        };
 
-            leaderboard.Add(new PvpLeaderboardModel
+        if (jsonDoc.RootElement.TryGetProperty("entries", out var entriesArray))
+        {
+            foreach (var entry in entriesArray.EnumerateArray())
             {
-                PlayerName = playerName,
-                Rating = rating
-            });
+                var leaderboardEntry = new LeaderboardEntry
+                {
+                    Rank = entry.GetProperty("rank").GetInt32(),
+                    Player = new Player
+                    {
+                        Name = entry.GetProperty("character").GetProperty("name").GetString(),
+                        Realm = new Realm
+                        {
+                            Slug = entry.GetProperty("character").GetProperty("realm").GetProperty("slug").GetString()
+                        }
+                    },
+                    Faction = new Faction
+                    {
+                        Type = entry.GetProperty("faction").GetProperty("type").GetString()
+                    },
+                    Rating = entry.GetProperty("rating").GetInt32(),
+                    SeasonMatchStatistics = new SeasonMatchStatistics
+                    {
+                        Played = entry.GetProperty("season_match_statistics").GetProperty("played").GetInt32(),
+                        Won = entry.GetProperty("season_match_statistics").GetProperty("won").GetInt32(),
+                        Lost = entry.GetProperty("season_match_statistics").GetProperty("lost").GetInt32()
+                    }
+                };
+
+                leaderboard.Entries.Add(leaderboardEntry);
+            }
         }
 
         return leaderboard;
     }
+
+
 
 }
 

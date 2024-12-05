@@ -1,38 +1,33 @@
-﻿@* 
-<h2>PvP Leaderboard</h2>
-<table class="table table-striped">
+﻿@model List<LeaderboardEntry>
+
+<h1>2v2 Leaderboard</h1>
+
+<table class="table">
     <thead>
         <tr>
+            <th>Rank</th>
             <th>Player Name</th>
+            <th>Realm</th>
+            <th>Faction</th>
             <th>Rating</th>
+            <th>Matches Played</th>
+            <th>Matches Won</th>
+            <th>Matches Lost</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var entry in Model)
         {
             <tr>
-                <td>@entry.PlayerName</td>
+                <td>@entry.Rank</td>
+                <td>@entry.Player.Name</td>
+                <td>@entry.Player.Realm.Slug</td>
+                <td>@entry.Faction.Type</td>
                 <td>@entry.Rating</td>
+                <td>@entry.SeasonMatchStatistics.Played</td>
+                <td>@entry.SeasonMatchStatistics.Won</td>
+                <td>@entry.SeasonMatchStatistics.Lost</td>
             </tr>
         }
     </tbody>
 </table>
-
-<div class="pagination">
-    @if (Model.Count == 20)
-    {
-        <a href="/leaderboard?page=@(Model.Page + 1)">Next</a>
-    }
-</div>
-<div class="pagination">
-    @if (Model.Page > 1)
-    {
-        <a href="/leaderboard?pvpSeasonId=33&pvpBracket=@Model.PvpBracket&page=@(Model.Page - 1)">Previous</a>
-    }
-
-    @if (Model.Count == 20)
-    {
-        <a href="/leaderboard?pvpSeasonId=33&pvpBracket=@Model.PvpBracket&page=@(Model.Page + 1)">Next</a>
-    }
-</div> 
- *@
