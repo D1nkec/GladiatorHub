@@ -1,0 +1,23 @@
+﻿<h2>Character: @Model.CharacterName (@Model.RealmName)</h2>
+<p>Honor Level: @Model.HonorLevel</p>
+<p>Honorable Kills: @Model.HonorableKills</p>
+<p><strong>Solo Shuffle Rating:</strong> @Model.SoloShuffleRating</p>
+
+<h3>Battle Statistics:</h3>
+<table>
+    <tr>
+        <th>Map</th>
+        <th>Played</th>
+        <th>Won</th>
+        <th>Lost</th>
+    </tr>
+    @foreach (var stat in Model.PvpMapStatistics)
+    {
+        <tr>
+            <td>@stat.MapName</td>
+            <td>@stat.Played</td>
+            <td>@stat.Won</td>
+            <td>@stat.Lost</td>
+        </tr>
+    }
+</table>
