@@ -16,26 +16,27 @@ public class LeaderboardEntry
     public SeasonMatchStatistics SeasonMatchStatistics { get; set; }
 }
 
-// Player - Igrač na leaderboardu
+
 public class Player
 {
     public string Name { get; set; }
+
     public Realm Realm { get; set; }
 }
 
-// Realm - Detalji o serveru na kojem igrač igra
+
 public class Realm
 {
-    public string Slug { get; set; }  // Npr. "tichondrius"
+    public string Slug { get; set; }  
 }
 
-// Faction - Faksija igrača (ALLIANCE / HORDE)
+
 public class Faction
 {
-    public string Type { get; set; }  // "ALLIANCE" ili "HORDE"
+    public string Type { get; set; }  
 }
 
-// SeasonMatchStatistics - Statistika mečeva za sezonu
+
 public class SeasonMatchStatistics
 {
     public int Played { get; set; }
