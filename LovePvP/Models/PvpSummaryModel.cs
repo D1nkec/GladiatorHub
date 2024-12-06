@@ -7,6 +7,6 @@
         public int HonorLevel { get; set; }
         public int HonorableKills { get; set; }
         public List<MapStatistics> PvpMapStatistics { get; set; }
-        public int SoloShuffleRating { get; set; }
+        public Dictionary<string, int> SoloShuffleRating { get; set; }
     }
 }

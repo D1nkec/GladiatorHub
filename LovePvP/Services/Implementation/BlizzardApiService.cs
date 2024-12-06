@@ -55,30 +55,35 @@ public class BlizzardApiService
         var content = await response.Content.ReadAsStringAsync();
         var jsonData = JsonDocument.Parse(content);
 
-        // Mapiranje podataka u model
+        // Mapiranje podataka u model s provjerom na prisutnost ključeva
         var pvpSummary = new PvpSummaryModel
         {
-            CharacterName = jsonData.RootElement.GetProperty("character").GetProperty("name").GetString(),
-            RealmName = jsonData.RootElement.GetProperty("character").GetProperty("realm").GetProperty("name").GetString(),
-            HonorLevel = jsonData.RootElement.GetProperty("honor_level").GetInt32(),
-            HonorableKills = jsonData.RootElement.GetProperty("honorable_kills").GetInt32(),
+            // Using TryGetProperty to avoid exceptions if keys are missing
+            CharacterName = jsonData.RootElement
+                .GetProperty("character").TryGetProperty("name", out var characterNameProp) ? characterNameProp.GetString() : "Unknown",
+            RealmName = jsonData.RootElement
+                .GetProperty("character").TryGetProperty("realm", out var realmProp) ? realmProp.GetProperty("name").GetString() : "Unknown",
+            HonorLevel = jsonData.RootElement
+                .TryGetProperty("honor_level", out var honorLevelProp) ? honorLevelProp.GetInt32() : 0,
+            HonorableKills = jsonData.RootElement
+                .TryGetProperty("honorable_kills", out var honorableKillsProp) ? honorableKillsProp.GetInt32() : 0,
             PvpMapStatistics = jsonData.RootElement
-                .GetProperty("pvp_map_statistics")
-                .EnumerateArray()
-                .Select(map => new MapStatistics
+                .TryGetProperty("pvp_map_statistics", out var mapStatsProp) && mapStatsProp.ValueKind == JsonValueKind.Array
+                ? mapStatsProp.EnumerateArray().Select(map => new MapStatistics
                 {
-                    MapName = map.GetProperty("world_map").GetProperty("name").GetString(),
-                    Played = map.GetProperty("match_statistics").GetProperty("played").GetInt32(),
-                    Won = map.GetProperty("match_statistics").GetProperty("won").GetInt32(),
-                    Lost = map.GetProperty("match_statistics").GetProperty("lost").GetInt32()
-                })
-                .ToList()
+                    MapName = map.TryGetProperty("world_map", out var worldMapProp) ? worldMapProp.GetProperty("name").GetString() : "Unknown",
+                    Played = map.GetProperty("match_statistics").TryGetProperty("played", out var playedProp) ? playedProp.GetInt32() : 0,
+                    Won = map.GetProperty("match_statistics").TryGetProperty("won", out var wonProp) ? wonProp.GetInt32() : 0,
+                    Lost = map.GetProperty("match_statistics").TryGetProperty("lost", out var lostProp) ? lostProp.GetInt32() : 0
+                }).ToList()
+                : new List<MapStatistics>()
         };
 
         return pvpSummary;
     }
 
-    public async Task<int> GetSoloShuffleRatingAsync(string realmSlug, string characterName)
+
+    public async Task<Dictionary<string, int>> GetSoloShuffleRatingAsync(string realmSlug, string characterName)
     {
         var accessToken = await GetAccessTokenAsync();
         var url = $"{_configuration["Blizzard:ApiBaseUrl"]}/profile/wow/character/{realmSlug}/{characterName}/pvp-summary?namespace=profile-us";
@@ -89,23 +94,38 @@ public class BlizzardApiService
         var response = await _httpClient.SendAsync(request);
 
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-            return 0; // Nema podataka
+            return new Dictionary<string, int>(); // Nema podataka
 
         response.EnsureSuccessStatusCode();
         var jsonString = await response.Content.ReadAsStringAsync();
         var jsonDoc = JsonDocument.Parse(jsonString);
 
-        // Pronađi PvP bracket za Solo Shuffle
+        // Pronađi PvP brackets za Solo Shuffle specijalizacije
+        var ratings = new Dictionary<string, int>();
         foreach (var bracket in jsonDoc.RootElement.GetProperty("brackets").EnumerateArray())
         {
             var href = bracket.GetProperty("href").GetString();
             if (href.Contains("shuffle"))
             {
-                return await GetRatingFromBracketAsync(href, accessToken);
+                var spec = DetermineSpecFromHref(href); // Ekstrahiraj spec iz URL-a
+                var rating = await GetRatingFromBracketAsync(href, accessToken);
+                ratings[spec] = rating;
             }
         }
-        return 0; // Ako nema Shuffle bracketa
+        return ratings; // Vraćamo sve rejtinge
     }
+
+    private string DetermineSpecFromHref(string href)
+    {
+        if (href.Contains("frost"))
+            return "Frost";
+        if (href.Contains("fire"))
+            return "Fire";
+        if (href.Contains("arcane"))
+            return "Arcane";
+        return "Unknown";
+    }
+
 
     private async Task<int> GetRatingFromBracketAsync(string url, string accessToken)
     {

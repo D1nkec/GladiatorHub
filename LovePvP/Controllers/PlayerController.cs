@@ -1,5 +1,6 @@
-﻿
+﻿using LovePvP.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace LovePvP.Controllers
 {
@@ -9,24 +10,23 @@ namespace LovePvP.Controllers
 
         public PlayerController(BlizzardApiService blizzardApiService)
         {
-            _blizzardApiService = blizzardApiService; 
+            _blizzardApiService = blizzardApiService;
         }
 
-        public IActionResult Search()
-        {
-            return View();
-        }
-
+        // This action is triggered when the form is submitted
+        [HttpGet]
         public async Task<IActionResult> PvpSummary(string realmSlug, string characterName)
         {
-            var pvpSummary = await _blizzardApiService.GetCharacterPvpSummaryAsync(realmSlug, characterName);
 
-            // Dohvati Solo Shuffle rating i dodaj ga u model
-            pvpSummary.SoloShuffleRating = await _blizzardApiService.GetSoloShuffleRatingAsync(realmSlug, characterName);
+                var pvpSummary = await _blizzardApiService.GetCharacterPvpSummaryAsync(realmSlug, characterName);
 
-            return View(pvpSummary);
+                // Retrieve Solo Shuffle rating and add it to the model
+                pvpSummary.SoloShuffleRating = await _blizzardApiService.GetSoloShuffleRatingAsync(realmSlug, characterName);
+
+                // Return the summary to the view
+                return View(pvpSummary);
+            
+            }
         }
-
     }
-}
 
