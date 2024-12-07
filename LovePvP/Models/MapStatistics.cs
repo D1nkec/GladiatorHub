@@ -1,4 +1,4 @@
-﻿namespace LovePvP.Models
+﻿namespace GladiatorHub.Models
 {
     public class MapStatistics
     {
@@ -7,4 +7,5 @@
         public int Won { get; set; }
         public int Lost { get; set; }
     }
+
 }

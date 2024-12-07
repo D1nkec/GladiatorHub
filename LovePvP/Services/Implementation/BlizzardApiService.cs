@@ -1,7 +1,7 @@
-﻿using System.Text.Json;
+﻿using GladiatorHub.Models;
+using GladiatorHub.Models.GladiatorHub.Models;
 using System.Net.Http.Headers;
-using LovePvP.Models;
-using GladiatorHub.Models;
+using System.Text.Json;
 
 public class BlizzardApiService
 {
@@ -51,11 +51,16 @@ public class BlizzardApiService
         return JsonDocument.Parse(jsonString);
     }
 
+    // Pomoćne metode za dohvaćanje vrijednosti
+    private string GetStringProperty(JsonElement element, string propertyName, string defaultValue = "Unknown")
+        => element.TryGetProperty(propertyName, out var prop) ? prop.GetString() : defaultValue;
+
+    private int GetIntProperty(JsonElement element, string propertyName, int defaultValue = 0)
+        => element.TryGetProperty(propertyName, out var prop) ? prop.GetInt32() : defaultValue;
 
 
 
-
-    // Dohvaćanje PvP sažetka
+    // GET PvP Summary
     public async Task<PvpSummaryModel> GetCharacterPvpSummaryAsync(string realmSlug, string characterName)
     {
         var accessToken = await GetAccessTokenAsync();
@@ -81,7 +86,8 @@ public class BlizzardApiService
         };
     }
 
-    // Dohvaćanje Solo Shuffle ratinga
+
+    // GET Solo Shuffle rating
     public async Task<Dictionary<string, int>> GetSoloShuffleRatingAsync(string realmSlug, string characterName)
     {
         var accessToken = await GetAccessTokenAsync();
@@ -109,8 +115,31 @@ public class BlizzardApiService
 
         return ratings;
     }
+    private string DetermineSpecFromHref(string href)
+    {
+        var specMappings = new Dictionary<string, string>
+        {
+            { "frost", "Frost" },
+            { "fire", "Fire" },
+            { "arcane", "Arcane" }
+        };
 
-    // Dohvaćanje PvP leaderboarda
+        foreach (var spec in specMappings)
+        {
+            if (href.Contains(spec.Key))
+                return spec.Value;
+        }
+
+        return "Unknown";
+    }
+    private async Task<int> GetRatingFromBracketAsync(string url, string accessToken)
+    {
+        var jsonDoc = await FetchJsonAsync(url, accessToken);
+        return GetIntProperty(jsonDoc.RootElement, "rating");
+    }
+
+
+    // GET PvP Leaderboard
     public async Task<ApiResponseModel<PvpLeaderboardModel>> GetPvpLeaderboardAsync(int pvpSeasonId, string pvpBracket)
     {
         var accessToken = await GetAccessTokenAsync();
@@ -118,7 +147,7 @@ public class BlizzardApiService
 
         try
         {
-            // FetchJsonAsync vraća JsonDocument, koristite RootElement za dohvat JsonElement
+           
             var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
             var leaderboard = new PvpLeaderboardModel
             {
@@ -126,7 +155,7 @@ public class BlizzardApiService
                 Bracket = pvpBracket
             };
 
-            // Sada koristimo RootElement, jer RootElement je JsonElement
+            
             if (jsonDoc.RootElement.TryGetProperty("entries", out var entriesArray))
             {
                 foreach (var entry in entriesArray.EnumerateArray())
@@ -175,40 +204,168 @@ public class BlizzardApiService
     }
 
 
-
-
-
-    // Pomoćne metode za dohvaćanje vrijednosti
-    private string GetStringProperty(JsonElement element, string propertyName, string defaultValue = "Unknown")
-        => element.TryGetProperty(propertyName, out var prop) ? prop.GetString() : defaultValue;
-
-    private int GetIntProperty(JsonElement element, string propertyName, int defaultValue = 0)
-        => element.TryGetProperty(propertyName, out var prop) ? prop.GetInt32() : defaultValue;
-
-    private string DetermineSpecFromHref(string href)
+    // GET Current Season Index
+    public async Task<int> GetCurrentSeasonAsync()
     {
-        var specMappings = new Dictionary<string, string>
-        {
-            { "frost", "Frost" },
-            { "fire", "Fire" },
-            { "arcane", "Arcane" }
-        };
+        var accessToken = await GetAccessTokenAsync();
+        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/pvp-season/index?namespace=dynamic-us&locale=en_US";
 
-        foreach (var spec in specMappings)
+        try
         {
-            if (href.Contains(spec.Key))
-                return spec.Value;
+            var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+
+            if (jsonDoc.RootElement.TryGetProperty("current_season", out var currentSeason))
+            {
+                return GetIntProperty(currentSeason, "id");
+            }
+
+            throw new Exception("Current season not found in the response.");
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error fetching current season: {ex.Message}");
+        }
+    }
+
+
+
+
+
+  // GET Class Icons
+  
+    public async Task<string> GetClassIconUrlAsync(int classId)
+    {
+        var accessToken = await GetAccessTokenAsync();
+        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/media/playable-class/{classId}?namespace=static-us&locale=en_US";
+
+        var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+
+        // Dohvaćanje URL-a ikone
+        return jsonDoc.RootElement.GetProperty("assets")
+            .EnumerateArray()
+            .FirstOrDefault(asset => asset.GetProperty("key").GetString() == "icon")
+            .GetProperty("value")
+            .GetString();
+    }
+
+    public async Task<List<PlayableClass>> GetAllClassIconsAsync()
+    {
+        var classIds = new Dictionary<int, string>
+    {
+        { 1, "Warrior" },
+        { 2, "Paladin" },
+        { 3, "Hunter" },
+        { 4, "Rogue" },
+        { 5, "Priest" },
+        { 6, "Death Knight" },
+        { 7, "Shaman" },
+        { 8, "Mage" },
+        { 9, "Warlock" },
+        { 10, "Monk" },
+        { 11, "Druid" },
+        { 12, "Demon Hunter" },
+        { 13, "Evoker" }
+    };
+
+        var playableClasses = new List<PlayableClass>();
+
+        foreach (var classEntry in classIds)
+        {
+            var iconUrl = await GetClassIconUrlAsync(classEntry.Key);
+            playableClasses.Add(new PlayableClass
+            {
+                Id = classEntry.Key,
+                Name = classEntry.Value,
+                IconUrl = iconUrl
+            });
         }
 
-        return "Unknown";
+        return playableClasses;
     }
 
-    private async Task<int> GetRatingFromBracketAsync(string url, string accessToken)
+
+
+
+    // GET Specialization icons
+    public async Task<List<PlayableSpecialization>> GetAllSpecializationIconsAsync()
     {
-        var jsonDoc = await FetchJsonAsync(url, accessToken);
-        return GetIntProperty(jsonDoc.RootElement, "rating");
+        var specializationIds = new Dictionary<int, string>
+    {
+        { 263, "Enhancement" },
+        { 270, "Mistweaver" },
+        { 66, "Protection" },
+        { 255, "Survival" },
+        { 256, "Discipline" },
+        { 268, "Brewmaster" },
+        { 72, "Fury" },
+        { 252, "Unholy" },
+        { 259, "Assassination" },
+        { 264, "Restoration" },
+        { 64, "Frost" },
+        { 62, "Arcane" },
+        { 65, "Holy" },
+        { 70, "Retribution" },
+        { 71, "Arms" },
+        { 73, "Protection" },
+        { 253, "Beast Mastery" },
+        { 254, "Marksmanship" },
+        { 258, "Shadow" },
+        { 261, "Subtlety" },
+        { 103, "Feral" },
+        { 104, "Guardian" },
+        { 105, "Restoration" },
+        { 267, "Destruction" },
+        { 257, "Holy" },
+        { 63, "Fire" },
+        { 250, "Blood" },
+        { 251, "Frost" },
+        { 260, "Outlaw" },
+        { 262, "Elemental" },
+        { 265, "Affliction" },
+        { 266, "Demonology" },
+        { 269, "Windwalker" },
+        { 102, "Balance" },
+        { 577, "Havoc" },
+        { 581, "Vengeance" },
+        { 1467, "Devastation" },
+        { 1468, "Preservation" },
+        { 1473, "Augmentation" }
+    };
+
+        var playableSpecializations = new List<PlayableSpecialization>();
+
+        foreach (var specializationEntry in specializationIds)
+        {
+            var iconUrl = await GetSpecializationIconUrlAsync(specializationEntry.Key);
+            playableSpecializations.Add(new PlayableSpecialization
+            {
+                Id = specializationEntry.Key,
+                Name = specializationEntry.Value,
+                IconUrl = iconUrl
+            });
+        }
+
+        return playableSpecializations;
     }
+
+    public async Task<string> GetSpecializationIconUrlAsync(int specializationId)
+    {
+        var accessToken = await GetAccessTokenAsync();
+        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/media/playable-specialization/{specializationId}?namespace=static-us&locale=en_US";
+
+        var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+
+        // Fetch the URL of the icon
+        return jsonDoc.RootElement.GetProperty("assets")
+            .EnumerateArray()
+            .FirstOrDefault(asset => asset.GetProperty("key").GetString() == "icon")
+            .GetProperty("value")
+            .GetString();
+    }
+
 
 
 
 }
+
+

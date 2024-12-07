@@ -1,8 +1,8 @@
-﻿using LovePvP.Models;
+﻿using GladiatorHub.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
-namespace LovePvP.Controllers
+namespace GladiatorHub.Controllers
 {
     public class PlayerController : Controller
     {
@@ -13,22 +13,16 @@ namespace LovePvP.Controllers
             _blizzardApiService = blizzardApiService;
         }
 
-        
+
         [HttpGet]
         public async Task<IActionResult> PvpSummary(string realmSlug, string characterName)
         {
-             var pvpSummary = await _blizzardApiService.GetCharacterPvpSummaryAsync(realmSlug, characterName);
+            var pvpSummary = await _blizzardApiService.GetCharacterPvpSummaryAsync(realmSlug, characterName);
 
-            // Retrieve Solo Shuffle rating and add it to the model
             pvpSummary.SoloShuffleRating = await _blizzardApiService.GetSoloShuffleRatingAsync(realmSlug, characterName);
-
             return View(pvpSummary);
-            }
-
-
-
-
-
         }
+
     }
+}
 

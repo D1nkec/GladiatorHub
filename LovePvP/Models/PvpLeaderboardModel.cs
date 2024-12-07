@@ -1,4 +1,4 @@
-﻿// PvpLeaderboardModel - Cjelokupni leaderboard
+﻿
 public class PvpLeaderboardModel
 {
     public int SeasonId { get; set; }
@@ -6,7 +6,7 @@ public class PvpLeaderboardModel
     public List<LeaderboardEntry> Entries { get; set; } = new List<LeaderboardEntry>();
 }
 
-// LeaderboardEntry - Pojedinačni unos na leaderboardu
+
 public class LeaderboardEntry
 {
     public int Rank { get; set; }

@@ -1,4 +1,4 @@
-﻿namespace LovePvP.Models
+﻿namespace GladiatorHub.Models
 {
     public class PvpSummaryModel
     {
@@ -9,4 +9,5 @@
         public List<MapStatistics> PvpMapStatistics { get; set; }
         public Dictionary<string, int> SoloShuffleRating { get; set; }
     }
+
 }

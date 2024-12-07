@@ -1,7 +1,8 @@
-﻿@model List<PlayableClass>
+﻿@using GladiatorHub.Models.GladiatorHub.Models
+@model List<PlayableSpecialization>
 
 @{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "World of Warcraft Specializations";
 }
 
 <h1 class="text-center">Search for a Player</h1>
@@ -24,14 +25,14 @@
 
 <hr />
 
-<h2 class="text-center">World of Warcraft Classes</h2>
+<h2 class="text-center">World of Warcraft Specializations</h2>
 
-<div class="class-icons">
-    @foreach (var playableClass in Model)
+<div class="specialization-icons">
+    @foreach (var playableSpecialization in Model)
     {
-        <div class="class-item">
-            <img src="@playableClass.IconUrl" alt="@playableClass.Name" title="@playableClass.Name" class="class-icon" />
-            <p>@playableClass.Name</p>
+        <div class="specialization-item">
+            <img src="@playableSpecialization.IconUrl" alt="@playableSpecialization.Name" title="@playableSpecialization.Name" class="specialization-icon" />
+            <p>@playableSpecialization.Name</p>
         </div>
     }
 </div>

@@ -1,22 +1,46 @@
-using LovePvP.Models;
+using GladiatorHub.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
-namespace LovePvP.Controllers
+namespace GladiatorHub.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly BlizzardApiService _blizzardApiService;
         private readonly ILogger<HomeController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(BlizzardApiService blizzardApiService, ILogger<HomeController> logger)
         {
             _logger = logger;
+            _blizzardApiService = blizzardApiService;
         }
 
-        public IActionResult Index()
+
+
+
+
+
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var classIcons = await _blizzardApiService.GetAllClassIconsAsync();
+            return View(classIcons);
         }
+
+        public async Task<IActionResult> Specializations()
+        {
+            var specializationIcons = await _blizzardApiService.GetAllSpecializationIconsAsync();
+            return View(specializationIcons);
+        }
+
+
+
+
+
+
+
+
+
 
         public IActionResult Privacy()
         {
