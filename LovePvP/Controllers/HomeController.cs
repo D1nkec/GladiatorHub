@@ -1,7 +1,9 @@
 using GladiatorHub.Models;
+using GladiatorHub.Mappings;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using GladiatorHub.Models.GladiatorHub.Models;
 
 namespace GladiatorHub.Controllers
 {
@@ -16,41 +18,32 @@ namespace GladiatorHub.Controllers
             _blizzardApiService = blizzardApiService;
         }
 
-
-
-
-
-
         public async Task<IActionResult> Index()
         {
             var classIcons = await _blizzardApiService.GetAllClassIconsAsync();
+            var classSpecializations = new Dictionary<int, List<PlayableSpecialization>>();
+
+            // Map classes to their specializations
+            foreach (var classEntry in ClassSpecializationMappings.ClassSpecializations)
+            {
+                var specializations = new List<PlayableSpecialization>();
+
+                foreach (var specialization in classEntry.Value)
+                {
+                    var iconUrl = await _blizzardApiService.GetSpecializationIconUrlAsync(specialization.Key);
+                    specializations.Add(new PlayableSpecialization
+                    {
+                        Id = specialization.Key,
+                        Name = specialization.Value,
+                        IconUrl = iconUrl
+                    });
+                }
+
+                classSpecializations[classEntry.Key] = specializations;
+            }
+
+            ViewBag.ClassSpecializations = classSpecializations;
             return View(classIcons);
-        }
-
-        public async Task<IActionResult> Specializations()
-        {
-            var specializationIcons = await _blizzardApiService.GetAllSpecializationIconsAsync();
-            return View(specializationIcons);
-        }
-
-
-
-
-
-
-
-
-
-
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }

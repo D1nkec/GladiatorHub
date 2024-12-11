@@ -10,5 +10,5 @@ namespace GladiatorHub.Models
 
         public List<PlayableSpecialization> Specializations { get; set; }
     }
-
+   
 }

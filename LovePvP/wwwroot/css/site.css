@@ -1,35 +1,145 @@
-html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-
-/* Ensures that the footer is always at the bottom */
-body, html {
-    height: 100%;
+﻿/* General styles for the page */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f7fb;
+    color: #333;
     margin: 0;
+    padding: 0;
+}
+
+/* Search container styles */
+.search-container {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Form labels and inputs */
+.form-label {
+    font-weight: bold;
+    color: #555;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    margin-top: 8px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+    .search-input:focus {
+        outline: none;
+        border-color: #007bff;
+    }
+
+/* Button styles */
+.search-button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 6px;
+    margin-top: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+    .search-button:hover {
+        background-color: #0056b3;
+    }
+
+/* World of Warcraft Classes Section */
+.class-icons {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px; /* Razmak između ikona */
+    padding: 20px;
 }
 
-.container {
-    flex-grow: 1; /* Makes the container stretch to fill available space */
-}
-
-footer {
-    padding: 1rem 0;
+/* Class item styles */
+.class-item {
     text-align: center;
-    background-color: #f8f9fa;
-    border-top: 1px solid #ddd;
-    margin-top: auto;
+    width: 60px; /* Manja širina da stanu u jedan red */
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
 }
+
+/* Icon styles */
+.class-icon {
+    width: 50px; /* Manja širina ikona */
+    height: 50px; /* Manja visina ikona */
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Hover effects on icons */
+.class-item:hover .class-icon {
+    transform: scale(1.2); /* Blago povećanje ikona prilikom hover-a */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Dodavanje sjenke */
+}
+
+/* Spec item styles */
+.specializations {
+    display: none; /* Skrivene specijalizacije po defaultu */
+    margin-top: 10px;
+    display: flex;
+    justify-content: center; /* Centriramo spec ikone */
+    gap: 15px; /* Razmak između spec ikona */
+}
+
+/* Specijalizacija pojedinačna stavka */
+.specialization-item {
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Spec ikone */
+.specialization-icon {
+    width: 40px; /* Manja širina ikona specova */
+    height: 40px; /* Manja visina ikona specova */
+    border-radius: 50%; /* Okrugli oblik kao kod klasa */
+    object-fit: cover; /* Osiguravamo da slika lepo stane */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Blaga sjenka */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Hover efekat na spec ikonama */
+.specialization-item:hover .specialization-icon {
+    transform: scale(1.1); /* Blago povećanje na hover */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Dodavanje izraženije sjenke */
+}
+
+/* Tekst specova */
+.specialization-item p {
+    margin-top: 5px; /* Mali razmak ispod ikone */
+    font-size: 12px; /* Manji font za naziv specova */
+    color: #555;
+}
+
+/* Responsive Design Adjustments */
+@media (max-width: 768px) {
+    .specialization-icon {
+        width: 35px; /* Smanjenje veličine spec ikona na manjim ekranima */
+        height: 35px;
+    }
+
+    .specialization-item p {
+        font-size: 11px; /* Smanjeni tekst za manje ekrane */
+    }
+}
+
+
 

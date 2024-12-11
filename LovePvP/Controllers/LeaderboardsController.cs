@@ -1,5 +1,4 @@
-﻿
-using GladiatorHub.Models;
+﻿using GladiatorHub.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GladiatorHub.Controllers
@@ -8,12 +7,11 @@ namespace GladiatorHub.Controllers
     public class LeaderboardsController : Controller
     {
         private readonly BlizzardApiService _blizzardApiService;
-   
+
         public LeaderboardsController(BlizzardApiService blizzardApiService)
         {
             _blizzardApiService = blizzardApiService;
         }
-
 
         [HttpGet("2v2")]
         public async Task<IActionResult> TwoVsTwo()
@@ -21,7 +19,6 @@ namespace GladiatorHub.Controllers
             try
             {
                 var currentSeason = await _blizzardApiService.GetCurrentSeasonAsync();
-
                 var apiResponse = await _blizzardApiService.GetPvpLeaderboardAsync(currentSeason, "2v2");
                 var leaderboard = apiResponse.Data;
 
@@ -30,13 +27,10 @@ namespace GladiatorHub.Controllers
                     return View("Error", "Leaderboard data not found.");
                 }
 
-               
-                var entries = leaderboard.Entries;
-                return View(entries);
+                return View(leaderboard.Entries);
             }
             catch (Exception ex)
             {
-                
                 return View("Error", $"An error occurred: {ex.Message}");
             }
         }
@@ -47,7 +41,6 @@ namespace GladiatorHub.Controllers
             try
             {
                 var currentSeason = await _blizzardApiService.GetCurrentSeasonAsync();
-
                 var apiResponse = await _blizzardApiService.GetPvpLeaderboardAsync(currentSeason, "3v3");
                 var leaderboard = apiResponse.Data;
 
@@ -56,13 +49,10 @@ namespace GladiatorHub.Controllers
                     return View("Error", "Leaderboard data not found.");
                 }
 
-                var entries = leaderboard.Entries;
-                return View(entries);
+                return View(leaderboard.Entries);
             }
-
             catch (Exception ex)
             {
-                
                 return View("Error", $"An error occurred: {ex.Message}");
             }
         }
@@ -73,7 +63,6 @@ namespace GladiatorHub.Controllers
             try
             {
                 var currentSeason = await _blizzardApiService.GetCurrentSeasonAsync();
-
                 var apiResponse = await _blizzardApiService.GetPvpLeaderboardAsync(currentSeason, "rbg");
                 var leaderboard = apiResponse.Data;
 
@@ -82,8 +71,7 @@ namespace GladiatorHub.Controllers
                     return View("Error", "Leaderboard data not found.");
                 }
 
-                var entries = leaderboard.Entries;
-                return View(entries);
+                return View(leaderboard.Entries);
             }
             catch (Exception ex)
             {
@@ -91,33 +79,40 @@ namespace GladiatorHub.Controllers
             }
         }
 
-
-
-
-
-
-
-        [HttpGet("solo-shuffle")]
-
-        public ActionResult SoloShuffle()
+        public async Task<IActionResult> SoloShuffle(string spec)
         {
+            try
+            {
+                
+                var currentSeason = await _blizzardApiService.GetCurrentSeasonAsync();
+                var leaderboardResponse = await _blizzardApiService.GetPvpLeaderboardAsync(currentSeason, $"shuffle-warrior-fury");
 
-        return View();
+                // Check if leaderboard data or entries are null
+                if (leaderboardResponse.Data == null || leaderboardResponse.Data.Entries == null || leaderboardResponse.Data.Entries.Count == 0)
+                {
+                    return View("Error", new ErrorViewModel { Message = "No leaderboard data available for this spec." });
+                }
 
+                return View(leaderboardResponse.Data.Entries); // Pass leaderboard entries to the view
+            }
+            catch (Exception ex)
+            {
+                // Log the error for debugging purposes
+                Console.WriteLine($"Error in SoloShuffle action: {ex.Message}");
+
+                return View("Error", new ErrorViewModel { Message = $"Error: {ex.Message}" });
+            }
         }
+
+
+
+
 
 
         [HttpGet("rated-bgblitz")]
-        public ActionResult RatedBgBlitz()
+        public IActionResult RatedBgBlitz()
         {
-
             return View();
-
         }
-
-
-
-
-
     }
 }

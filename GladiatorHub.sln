@@ -5,8 +5,6 @@ VisualStudioVersion = 17.10.35004.147
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GladiatorHub", "LovePvP\GladiatorHub.csproj", "{70FD814A-76B6-495C-8E6F-D6EA12EC4159}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GladiatorHub.Tests", "GladiatorHub.Tests\GladiatorHub.Tests.csproj", "{547F148A-0A07-4A6B-A496-FD48E500C595}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{70FD814A-76B6-495C-8E6F-D6EA12EC4159}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70FD814A-76B6-495C-8E6F-D6EA12EC4159}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70FD814A-76B6-495C-8E6F-D6EA12EC4159}.Release|Any CPU.Build.0 = Release|Any CPU
-		{547F148A-0A07-4A6B-A496-FD48E500C595}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{547F148A-0A07-4A6B-A496-FD48E500C595}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{547F148A-0A07-4A6B-A496-FD48E500C595}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{547F148A-0A07-4A6B-A496-FD48E500C595}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,3 +1,47 @@
-﻿
-<h1>Solo Shuffle Leaderboard</h1>
+﻿@model List<LeaderboardEntry>
 
+<h2>Solo Shuffle Leaderboard for @ViewData["Spec"]</h2>
+
+<table class="leaderboard-table">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Player</th>
+            <th>Realm</th>
+            <th>Rating</th>
+            <th>Wins</th>
+            <th>Losses</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var entry in Model)
+        {
+                <tr>
+                    <td>@entry.Rank</td>
+                    <td>@entry.Player.Name</td>
+                    <td>@entry.Player.Realm.Slug</td>
+                    <td>@entry.Rating</td>
+                    <td>@entry.SeasonMatchStatistics.Won</td>
+                    <td>@entry.SeasonMatchStatistics.Lost</td>
+                </tr>
+        }
+    </tbody>
+</table>
+
+<style>
+    .leaderboard-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .leaderboard-table th, .leaderboard-table td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: left;
+    }
+
+    .leaderboard-table th {
+        background-color: #f4f4f4;
+    }
+</style>

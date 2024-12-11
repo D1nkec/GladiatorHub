@@ -1,4 +1,6 @@
-﻿@model List<PlayableClass>
+﻿@using GladiatorHub.Models
+
+@model List<PlayableClass>
 
 @{
     ViewData["Title"] = "Home Page";
@@ -29,10 +31,34 @@
 <div class="class-icons">
     @foreach (var playableClass in Model)
     {
-        <div class="class-item">
-            <img src="@playableClass.IconUrl" alt="@playableClass.Name" title="@playableClass.Name" class="class-icon" />
+        <div class="class-item" onclick="toggleSpecializations(@playableClass.Id)">
+            <img src="@playableClass.IconUrl" class="class-icon" />
             <p>@playableClass.Name</p>
-        </div>
+
+            <!-- Display specializations for this class when clicked -->
+            <div id="specializations-@playableClass.Id" class="specializations" style="display: none;">
+                @if (ViewBag.ClassSpecializations != null && ViewBag.ClassSpecializations.ContainsKey(playableClass.Id))
+                {
+                    var specializations = ViewBag.ClassSpecializations[playableClass.Id];
+                    foreach (var specialization in specializations)
+                    {
+                        <div class="specialization-item">
+                            <!-- Link specialization to its leaderboard page -->
+                            <a href="@Url.Action("SoloShuffle", "Leaderboards", new { spec = specialization.Name.ToLower().Replace(" ", "-") })">
+                                <img src="@specialization.IconUrl" class="specialization-icon" />
+                                <p>@specialization.Name</p>
+                            </a>
+                        </div>
+                    }
+                }
+            </div> <!-- Closing div for specializations -->
+        </div> <!-- Closing div for class-item -->
     }
 </div>
 
+<script>
+    function toggleSpecializations(classId) {
+        var specializationsDiv = document.getElementById('specializations-' + classId);
+        specializationsDiv.style.display = specializationsDiv.style.display === 'none' ? 'block' : 'none';
+    }
+</script>

@@ -17,10 +17,11 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\GladiatorHub.csproj" />
-  </ItemGroup>
-	
+	<ItemGroup>
+		<ProjectReference Include="..\GladiatorHub\GladiatorHub.csproj" />
+	</ItemGroup>
+
+
 	<ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
