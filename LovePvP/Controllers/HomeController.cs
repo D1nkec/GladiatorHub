@@ -20,30 +20,46 @@ namespace GladiatorHub.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var classIcons = await _blizzardApiService.GetAllClassIconsAsync();
+            // Fetch all playable classes
+            var playableClasses = await _blizzardApiService.GetPlayableClassesAsync();
+
+            // Fetch specializations for each class asynchronously
             var classSpecializations = new Dictionary<int, List<PlayableSpecialization>>();
 
-            // Map classes to their specializations
-            foreach (var classEntry in ClassSpecializationMappings.ClassSpecializations)
+            foreach (var playableClass in playableClasses)
             {
-                var specializations = new List<PlayableSpecialization>();
+                // Await asynchronous operation for specializations
+                var specializations = await _blizzardApiService.GetSpecializationsForClassAsync(playableClass.Id);
 
-                foreach (var specialization in classEntry.Value)
+                if (specializations != null)
                 {
-                    var iconUrl = await _blizzardApiService.GetSpecializationIconUrlAsync(specialization.Key);
-                    specializations.Add(new PlayableSpecialization
+                    // Map specializations asynchronously
+                    var specializationList = new List<PlayableSpecialization>();
+                    foreach (var spec in specializations)
                     {
-                        Id = specialization.Key,
-                        Name = specialization.Value,
-                        IconUrl = iconUrl
-                    });
-                }
+                        var specializationIconUrl = await _blizzardApiService.GetSpecializationIconUrlAsync(spec.Key);
+                        specializationList.Add(new PlayableSpecialization
+                        {
+                            Id = spec.Key,
+                            Name = spec.Value,
+                            IconUrl = specializationIconUrl
+                        });
+                    }
 
-                classSpecializations[classEntry.Key] = specializations;
+                    // Add to the dictionary
+                    classSpecializations[playableClass.Id] = specializationList;
+                }
             }
 
+            // Pass the specializations data to the view
             ViewBag.ClassSpecializations = classSpecializations;
-            return View(classIcons);
+            return View(playableClasses);
+        }
+
+        public IActionResult SoloShuffle(string spec)
+        {
+            // Redirect to the Solo Shuffle leaderboard page
+            return Redirect($"https://worldofwarcraft.com/en-us/pvp/leaderboards/shuffle-{spec}");
         }
     }
 }

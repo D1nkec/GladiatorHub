@@ -1,8 +1,9 @@
-﻿/* General styles for the page */
+﻿
+
+/* General styles for the page */
 body {
     font-family: 'Arial', sans-serif;
-    background-color: #f4f7fb;
-    color: #333;
+    background: #ffffff;
     margin: 0;
     padding: 0;
 }
@@ -128,7 +129,21 @@ body {
     font-size: 12px; /* Manji font za naziv specova */
     color: #555;
 }
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
 
+    .leaderboard-table th, .leaderboard-table td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: left;
+    }
+
+    .leaderboard-table th {
+        background-color: #f4f4f4;
+    }
 /* Responsive Design Adjustments */
 @media (max-width: 768px) {
     .specialization-icon {

@@ -304,8 +304,7 @@ public class BlizzardApiService
 
 
 
-    // GET Class Icons
-
+    // Fetch Class Icon URL
     public async Task<string> GetClassIconUrlAsync(int classId)
     {
         var accessToken = await GetAccessTokenAsync();
@@ -313,7 +312,6 @@ public class BlizzardApiService
 
         var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
 
-        // Dohvaćanje URL-a ikone
         return jsonDoc.RootElement.GetProperty("assets")
             .EnumerateArray()
             .FirstOrDefault(asset => asset.GetProperty("key").GetString() == "icon")
@@ -321,48 +319,7 @@ public class BlizzardApiService
             .GetString();
     }
 
-    public async Task<List<PlayableClass>> GetAllClassIconsAsync()
-    {
-        var playableClasses = new List<PlayableClass>();
-
-        foreach (var classEntry in ClassMappings.ClassIds)
-        {
-            var iconUrl = await GetClassIconUrlAsync(classEntry.Key);
-            playableClasses.Add(new PlayableClass
-            {
-                Id = classEntry.Key,
-                Name = classEntry.Value,
-                IconUrl = iconUrl
-            });
-        }
-
-        return playableClasses;
-    }
-
-
-
-
-
-    // GET Specialization icons
-    public async Task<List<PlayableSpecialization>> GetAllSpecializationIconsAsync()
-    {
-        var playableSpecializations = new List<PlayableSpecialization>();
-
-        foreach (var specializationEntry in SpecializationMappings.SpecializationIds)
-        {
-            var iconUrl = await GetSpecializationIconUrlAsync(specializationEntry.Key);
-            playableSpecializations.Add(new PlayableSpecialization
-            {
-                Id = specializationEntry.Key,
-                Name = specializationEntry.Value,
-                IconUrl = iconUrl
-            });
-        }
-
-        return playableSpecializations;
-    }
-
-
+    // Fetch Specialization Icon URL
     public async Task<string> GetSpecializationIconUrlAsync(int specializationId)
     {
         var accessToken = await GetAccessTokenAsync();
@@ -370,11 +327,48 @@ public class BlizzardApiService
 
         var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
 
-        // Fetch the URL of the icon
         return jsonDoc.RootElement.GetProperty("assets")
             .EnumerateArray()
             .FirstOrDefault(asset => asset.GetProperty("key").GetString() == "icon")
             .GetProperty("value")
             .GetString();
+    }
+
+    // Fetch All Playable Classes
+    public async Task<List<PlayableClass>> GetPlayableClassesAsync()
+    {
+        var accessToken = await GetAccessTokenAsync();
+        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/playable-class/index?namespace=static-us&locale=en_US";
+
+        var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+
+        return jsonDoc.RootElement.GetProperty("classes")
+            .EnumerateArray()
+            .Select(cls => new PlayableClass
+            {
+                Id = cls.GetProperty("id").GetInt32(),
+                Name = cls.GetProperty("name").GetString(),
+                IconUrl = GetClassIconUrlAsync(cls.GetProperty("id").GetInt32()).Result
+            }).ToList();
+    }
+
+    // Fetch Specializations for a Class
+    public async Task<Dictionary<int, string>> GetSpecializationsForClassAsync(int classId)
+    {
+        var accessToken = await GetAccessTokenAsync();
+        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/playable-class/{classId}?namespace=static-us&locale=en_US";
+
+        var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+
+        if (jsonDoc.RootElement.TryGetProperty("specializations", out var specializationsArray))
+        {
+            return specializationsArray.EnumerateArray()
+                .ToDictionary(
+                    spec => spec.GetProperty("id").GetInt32(),
+                    spec => spec.GetProperty("name").GetString()
+                );
+        }
+
+        return new Dictionary<int, string>();
     }
 }

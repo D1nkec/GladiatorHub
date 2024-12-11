@@ -6,59 +6,60 @@
     ViewData["Title"] = "Home Page";
 }
 
-<h1 class="text-center">Search for a Player</h1>
+<div class="container mt-4">
+    <!-- Search Form -->
+    <h1 class="text-center">Search for a Player</h1>
+    <div class="search-container mb-5">
+        <form method="get" asp-controller="Player" asp-action="PvpSummary" class="needs-validation" novalidate>
+            <div class="mb-3">
+                <label for="characterName" class="form-label">Character Name</label>
+                <input type="text" class="form-control" id="characterName" name="characterName" placeholder="Enter character name" required />
+            </div>
+            <div class="mb-3">
+                <label for="realmSlug" class="form-label">Realm Name</label>
+                <input type="text" class="form-control" id="realmSlug" name="realmSlug" placeholder="Enter realm name" required />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Search</button>
+        </form>
+    </div>
 
-<div class="search-container">
-    <form method="get" asp-controller="Player" asp-action="PvpSummary">
-        <div class="form-group">
-            <label for="characterName" class="form-label">Character Name</label>
-            <input type="text" class="form-control search-input" id="characterName" name="characterName" placeholder="Enter character name" required />
-        </div>
+    <hr />
 
-        <div class="form-group">
-            <label for="realmSlug" class="form-label">Realm Name</label>
-            <input type="text" class="form-control search-input" id="realmSlug" name="realmSlug" placeholder="Enter realm name" required />
-        </div>
+    <!-- Class Icons -->
+    <h2 class="text-center">World of Warcraft Classes</h2>
+    <div class="row mt-4">
+        @foreach (var playableClass in Model)
+        {
+            <div class="col-md-3 col-sm-6 text-center class-item mb-4" onclick="toggleSpecializations(@playableClass.Id)">
+                <div class="card shadow">
+                    <img src="@playableClass.IconUrl" alt="@playableClass.Name Icon" class="card-img-top class-icon" />
+                   
+                </div>
 
-        <button type="submit" class="btn btn-primary search-button">Search</button>
-    </form>
-</div>
-
-<hr />
-
-<h2 class="text-center">World of Warcraft Classes</h2>
-
-<div class="class-icons">
-    @foreach (var playableClass in Model)
-    {
-        <div class="class-item" onclick="toggleSpecializations(@playableClass.Id)">
-            <img src="@playableClass.IconUrl" class="class-icon" />
-            <p>@playableClass.Name</p>
-
-            <!-- Display specializations for this class when clicked -->
-            <div id="specializations-@playableClass.Id" class="specializations" style="display: none;">
-                @if (ViewBag.ClassSpecializations != null && ViewBag.ClassSpecializations.ContainsKey(playableClass.Id))
-                {
-                    var specializations = ViewBag.ClassSpecializations[playableClass.Id];
-                    foreach (var specialization in specializations)
+                <!-- Specializations for this class -->
+                <div id="specializations-@playableClass.Id" class="specializations mt-3" style="display: none;">
+                    @if (ViewBag.ClassSpecializations != null && ViewBag.ClassSpecializations.ContainsKey(playableClass.Id))
                     {
-                        <div class="specialization-item">
-                            <!-- Link specialization to its leaderboard page -->
-                            <a href="@Url.Action("SoloShuffle", "Leaderboards", new { spec = specialization.Name.ToLower().Replace(" ", "-") })">
-                                <img src="@specialization.IconUrl" class="specialization-icon" />
-                                <p>@specialization.Name</p>
-                            </a>
-                        </div>
+                        var specializations = ViewBag.ClassSpecializations[playableClass.Id];
+                        foreach (var specialization in specializations)
+                        {
+                            <div class="specialization-item mb-2">
+                                <a href="@Url.Action("SoloShuffle", "Leaderboards", new {klasa = playableClass.Name.ToLower().Replace(" ", "-"), spec = specialization.Name.ToLower().Replace(" ", "-") })" class="text-decoration-none">
+                                    <img src="@specialization.IconUrl" alt="@specialization.Name Icon" class="specialization-icon" />
+                                    <p>@specialization.Name</p>
+                                </a>
+                            </div>
+                        }
                     }
-                }
-            </div> <!-- Closing div for specializations -->
-        </div> <!-- Closing div for class-item -->
-    }
+                </div>
+            </div>
+        }
+    </div>
 </div>
 
 <script>
     function toggleSpecializations(classId) {
-        var specializationsDiv = document.getElementById('specializations-' + classId);
-        specializationsDiv.style.display = specializationsDiv.style.display === 'none' ? 'block' : 'none';
+        const specDiv = document.getElementById('specializations-' + classId);
+        specDiv.style.display = specDiv.style.display === 'none' ? 'block' : 'none';
     }
 </script>

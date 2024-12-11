@@ -1,4 +1,6 @@
 ﻿
+using GladiatorHub.Models.GladiatorHub.Models;
+
 public class PvpLeaderboardModel
 {
     public int SeasonId { get; set; }
@@ -19,6 +21,7 @@ public class LeaderboardEntry
 
 public class Player
 {
+   
     public string Name { get; set; }
 
     public Realm Realm { get; set; }

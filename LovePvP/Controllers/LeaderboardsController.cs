@@ -79,28 +79,44 @@ namespace GladiatorHub.Controllers
             }
         }
 
-        public async Task<IActionResult> SoloShuffle(string spec)
+        public async Task<IActionResult> SoloShuffle(string spec, string klasa)
         {
             try
             {
-                
+                // Validate input
+                if (string.IsNullOrEmpty(spec))
+                {
+                    return View("Error", new ErrorViewModel { Message = "Specialization is required." });
+                }
+
+                // Get the current PvP season
                 var currentSeason = await _blizzardApiService.GetCurrentSeasonAsync();
-                var leaderboardResponse = await _blizzardApiService.GetPvpLeaderboardAsync(currentSeason, $"shuffle-warrior-fury");
+
+                // Format the specialization parameter to match the API endpoint requirements
+                var formattedSpec = spec.ToLower().Replace(" ", "-"); // Ensure correct format for API
+                var formattedKlasa = klasa.ToLower().Replace(" ", "-");
+                // Construct the leaderboard key based on the specialization
+                var leaderboardKey = $"shuffle-{klasa}-{formattedSpec}";
+
+                // Fetch leaderboard data from the API
+                var leaderboardResponse = await _blizzardApiService.GetPvpLeaderboardAsync(currentSeason, leaderboardKey);
 
                 // Check if leaderboard data or entries are null
                 if (leaderboardResponse.Data == null || leaderboardResponse.Data.Entries == null || leaderboardResponse.Data.Entries.Count == 0)
                 {
-                    return View("Error", new ErrorViewModel { Message = "No leaderboard data available for this spec." });
+                    return View("Error", new ErrorViewModel { Message = $"No leaderboard data available for specialization: {spec}." });
                 }
 
-                return View(leaderboardResponse.Data.Entries); // Pass leaderboard entries to the view
+                // Pass leaderboard entries to the view
+                return View(leaderboardResponse.Data.Entries);
             }
             catch (Exception ex)
             {
                 // Log the error for debugging purposes
                 Console.WriteLine($"Error in SoloShuffle action: {ex.Message}");
 
-                return View("Error", new ErrorViewModel { Message = $"Error: {ex.Message}" });
+                // Return an error view with a friendly message
+                return View("Error", new ErrorViewModel { Message = $"An error occurred: {ex.Message}" });
             }
         }
 
