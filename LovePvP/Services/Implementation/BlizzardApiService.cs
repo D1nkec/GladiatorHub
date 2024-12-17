@@ -1,30 +1,38 @@
 ﻿using GladiatorHub.Mappings;
 using GladiatorHub.Models;
 using GladiatorHub.Models.GladiatorHub.Models;
+using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
+
+
 public class BlizzardApiService
 {
+
     private readonly IConfiguration _configuration;
+    private readonly BlizzardSettings _settings;
     private readonly HttpClient _httpClient;
+    private readonly ILogger<BlizzardApiService> _logger;
+    private string _accessToken;
+    private DateTime _tokenExpiration;
 
-    public BlizzardApiService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    public BlizzardApiService(IHttpClientFactory httpClientFactory, IOptions<BlizzardSettings> settings, IConfiguration configuration, ILogger<BlizzardApiService> logger)
     {
-        _configuration = configuration;
+        _settings = settings.Value;
         _httpClient = httpClientFactory.CreateClient();
+        _configuration = configuration;
+        _logger = logger;
     }
-
 
     // Dohvaćanje pristupnog tokena
     public async Task<string> GetAccessTokenAsync()
     {
-        var clientId = _configuration["Blizzard:ClientId"];
-        var clientSecret = _configuration["Blizzard:ClientSecret"];
-        var tokenUrl = _configuration["Blizzard:TokenUrl"];
+        if (!string.IsNullOrEmpty(_accessToken) && DateTime.UtcNow < _tokenExpiration)
+            return _accessToken;
 
-        var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl);
-        var credentials = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{clientId}:{clientSecret}"));
+        var request = new HttpRequestMessage(HttpMethod.Post, _settings.TokenUrl);
+        var credentials = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{_settings.ClientId}:{_settings.ClientSecret}"));
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
         request.Content = new FormUrlEncodedContent(new[]
         {
@@ -36,7 +44,12 @@ public class BlizzardApiService
 
         var content = await response.Content.ReadAsStringAsync();
         var jsonDocument = JsonDocument.Parse(content);
-        return jsonDocument.RootElement.GetProperty("access_token").GetString();
+
+        _accessToken = jsonDocument.RootElement.GetProperty("access_token").GetString();
+        var expiresIn = jsonDocument.RootElement.GetProperty("expires_in").GetInt32();
+        _tokenExpiration = DateTime.UtcNow.AddSeconds(expiresIn - 60); // Buffer od 60 sekundi
+
+        return _accessToken;
     }
 
     // Pomoćna metoda za dohvaćanje JSON odgovora
@@ -52,22 +65,33 @@ public class BlizzardApiService
         return JsonDocument.Parse(jsonString);
     }
 
-    // Pomoćne metode za dohvaćanje vrijednosti
-    private string GetStringProperty(JsonElement element, string propertyName, string defaultValue = "Unknown")
-        => element.TryGetProperty(propertyName, out var prop) ? prop.GetString() : defaultValue;
-
-    private int GetIntProperty(JsonElement element, string propertyName, int defaultValue = 0)
-        => element.TryGetProperty(propertyName, out var prop) ? prop.GetInt32() : defaultValue;
-
-
+    // Pomoćna metoda za sigurno dohvaćanje JSON odgovora s obradom grešaka
+    private async Task<JsonDocument> SafeFetchJsonAsync(string url, string accessToken)
+    {
+        try
+        {
+            var jsonDoc = await FetchJsonAsync(url, accessToken);
+            return jsonDoc;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP Error occurred while fetching data from Blizzard API.");
+            throw new Exception("Blizzard API request failed.", ex);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An unexpected error occurred.");
+            throw;
+        }
+    }
 
     // GET PvP Summary
     public async Task<PvpSummaryModel> GetCharacterPvpSummaryAsync(string realmSlug, string characterName)
     {
         var accessToken = await GetAccessTokenAsync();
-        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/profile/wow/character/{realmSlug}/{characterName}/pvp-summary?namespace=profile-us&locale=en_US";
+        var apiUrl = $"{_settings.ApiBaseUrl}/profile/wow/character/{realmSlug}/{characterName}/pvp-summary?namespace=profile-us&locale=en_US";
 
-        var jsonData = await FetchJsonAsync(apiUrl, accessToken);
+        var jsonData = await SafeFetchJsonAsync(apiUrl, accessToken);
 
         return new PvpSummaryModel
         {
@@ -87,14 +111,13 @@ public class BlizzardApiService
         };
     }
 
-
     // GET Solo Shuffle rating
     public async Task<Dictionary<string, int>> GetSoloShuffleRatingAsync(string realmSlug, string characterName)
     {
         var accessToken = await GetAccessTokenAsync();
-        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/profile/wow/character/{realmSlug}/{characterName}/pvp-summary?namespace=profile-us";
+        var apiUrl = $"{_settings.ApiBaseUrl}/profile/wow/character/{realmSlug}/{characterName}/pvp-summary?namespace=profile-us";
 
-        var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+        var jsonDoc = await SafeFetchJsonAsync(apiUrl, accessToken);
         var ratings = new Dictionary<string, int>();
 
         if (jsonDoc.RootElement.TryGetProperty("brackets", out var brackets))
@@ -116,6 +139,7 @@ public class BlizzardApiService
 
         return ratings;
     }
+
     private string DetermineSpecFromHref(string href)
     {
         foreach (var spec in SpecMappings.SpecKeywords)
@@ -127,91 +151,21 @@ public class BlizzardApiService
         return "Unknown";
     }
 
-
     private async Task<int> GetRatingFromBracketAsync(string url, string accessToken)
     {
-        var jsonDoc = await FetchJsonAsync(url, accessToken);
+        var jsonDoc = await SafeFetchJsonAsync(url, accessToken);
         return GetIntProperty(jsonDoc.RootElement, "rating");
     }
 
-
     // GET PvP Leaderboard
-    //public async Task<ApiResponseModel<PvpLeaderboardModel>> GetPvpLeaderboardAsync(int pvpSeasonId, string pvpBracket)
-    //{
-    //    var accessToken = await GetAccessTokenAsync();
-    //    var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/pvp-season/{pvpSeasonId}/pvp-leaderboard/{pvpBracket}?namespace=dynamic-us&locale=en_US";
-
-    //    try
-    //    {
-
-    //        var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
-    //        var leaderboard = new PvpLeaderboardModel
-    //        {
-    //            SeasonId = pvpSeasonId,
-    //            Bracket = pvpBracket
-    //        };
-
-
-    //        if (jsonDoc.RootElement.TryGetProperty("entries", out var entriesArray))
-    //        {
-    //            foreach (var entry in entriesArray.EnumerateArray())
-    //            {
-    //                leaderboard.Entries.Add(new LeaderboardEntry
-    //                {
-    //                    Rank = GetIntProperty(entry, "rank"),
-    //                    Player = new Player
-    //                    {
-    //                        Name = GetStringProperty(entry.GetProperty("character"), "name"),
-    //                        Realm = new Realm
-    //                        {
-    //                            Slug = GetStringProperty(entry.GetProperty("character").GetProperty("realm"), "slug")
-    //                        }
-    //                    },
-    //                    Faction = new Faction
-    //                    {
-    //                        Type = GetStringProperty(entry.GetProperty("faction"), "type")
-    //                    },
-    //                    Rating = GetIntProperty(entry, "rating"),
-    //                    SeasonMatchStatistics = new SeasonMatchStatistics
-    //                    {
-    //                        Played = GetIntProperty(entry.GetProperty("season_match_statistics"), "played"),
-    //                        Won = GetIntProperty(entry.GetProperty("season_match_statistics"), "won"),
-    //                        Lost = GetIntProperty(entry.GetProperty("season_match_statistics"), "lost")
-    //                    }
-    //                });
-    //            }
-    //        }
-
-    //        return new ApiResponseModel<PvpLeaderboardModel>
-    //        {
-    //            Data = leaderboard,
-    //            Message = "Success"
-    //        };
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        return new ApiResponseModel<PvpLeaderboardModel>
-    //        {
-    //            Data = null,
-    //            Message = $"Error: {ex.Message}"
-    //        };
-    //    }
-
-    //}
-
-
-    // GET Current Season Index
-
-
-
     public async Task<ApiResponseModel<PvpLeaderboardModel>> GetPvpLeaderboardAsync(int pvpSeasonId, string pvpBracket)
     {
         var accessToken = await GetAccessTokenAsync();
-        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/pvp-season/{pvpSeasonId}/pvp-leaderboard/{pvpBracket}?namespace=dynamic-us&locale=en_US";
+        var apiUrl = $"{_settings.ApiBaseUrl}/data/wow/pvp-season/{pvpSeasonId}/pvp-leaderboard/{pvpBracket}?namespace=dynamic-us&locale=en_US";
 
         try
         {
-            var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+            var jsonDoc = await SafeFetchJsonAsync(apiUrl, accessToken);
             var leaderboard = new PvpLeaderboardModel
             {
                 SeasonId = pvpSeasonId,
@@ -248,12 +202,6 @@ public class BlizzardApiService
                 }
             }
 
-            // Ensure that leaderboard.Entries is not null or empty
-            if (leaderboard.Entries.Count == 0)
-            {
-                throw new Exception("No entries found in the leaderboard response.");
-            }
-
             return new ApiResponseModel<PvpLeaderboardModel>
             {
                 Data = leaderboard,
@@ -262,9 +210,7 @@ public class BlizzardApiService
         }
         catch (Exception ex)
         {
-            // Log the exception for debugging purposes
-            Console.WriteLine($"Error fetching leaderboard: {ex.Message}");
-
+            _logger.LogError(ex, "Error fetching leaderboard.");
             return new ApiResponseModel<PvpLeaderboardModel>
             {
                 Data = null,
@@ -273,19 +219,15 @@ public class BlizzardApiService
         }
     }
 
-
-
-
-
-
+    // GET Current Season Index
     public async Task<int> GetCurrentSeasonAsync()
     {
         var accessToken = await GetAccessTokenAsync();
-        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/pvp-season/index?namespace=dynamic-us&locale=en_US";
+        var apiUrl = $"{_settings.ApiBaseUrl}/data/wow/pvp-season/index?namespace=dynamic-us&locale=en_US";
 
         try
         {
-            var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+            var jsonDoc = await SafeFetchJsonAsync(apiUrl, accessToken);
 
             if (jsonDoc.RootElement.TryGetProperty("current_season", out var currentSeason))
             {
@@ -296,14 +238,10 @@ public class BlizzardApiService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error fetching current season: {ex.Message}");
+            _logger.LogError(ex, "Error fetching current season.");
+            throw new Exception($"Error fetching current season: {ex.Message}", ex);
         }
     }
-
-
-
-
-
     // Fetch Class Icon URL
     public async Task<string> GetClassIconUrlAsync(int classId)
     {
@@ -370,5 +308,54 @@ public class BlizzardApiService
         }
 
         return new Dictionary<int, string>();
+    }
+
+    // Fetch All Specializations
+    public async Task<List<PlayableSpecialization>> GetAllSpecializationsAsync()
+    {
+        var accessToken = await GetAccessTokenAsync();
+        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/playable-specialization/index?namespace=static-us&locale=en_US";
+
+        var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+
+        return jsonDoc.RootElement.GetProperty("specializations")
+            .EnumerateArray()
+            .Select(spec => new PlayableSpecialization
+            {
+                Id = spec.GetProperty("id").GetInt32(),
+                Name = spec.GetProperty("name").GetString(),
+               
+                IconUrl = GetSpecializationIconUrlAsync(spec.GetProperty("id").GetInt32()).Result
+            }).ToList();
+    }
+
+    // Fetch Specializations for a given class by classId
+    public async Task<List<PlayableSpecialization>> GetSpecializationsByClassIdAsync(int classId)
+    {
+        var accessToken = await GetAccessTokenAsync();
+        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/data/wow/playable-class/{classId}?namespace=static-us&locale=en_US";
+
+        var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+
+        return jsonDoc.RootElement.GetProperty("specializations")
+            .EnumerateArray()
+            .Select(spec => new PlayableSpecialization
+            {
+                Id = spec.GetProperty("id").GetInt32(),
+                Name = spec.GetProperty("name").GetString(),
+               
+                IconUrl = GetSpecializationIconUrlAsync(spec.GetProperty("id").GetInt32()).Result
+            }).ToList();
+    }
+
+
+    private string GetStringProperty(JsonElement element, string propertyName)
+    {
+        return element.TryGetProperty(propertyName, out var prop) ? prop.GetString() : string.Empty;
+    }
+
+    private int GetIntProperty(JsonElement element, string propertyName)
+    {
+        return element.TryGetProperty(propertyName, out var prop) ? prop.GetInt32() : 0;
     }
 }

@@ -1,6 +1,16 @@
 
+using GladiatorHub.Models;
+using Microsoft.Extensions.Configuration;
+
+
+
 
 var builder = WebApplication.CreateBuilder(args);
+// Add configuration from appsettings.json
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+// Bind the BlizzardSettings from the configuration
+builder.Services.Configure<BlizzardSettings>(builder.Configuration.GetSection("Blizzard"));
 builder.Services.AddHttpClient();
 // Add services to the container.
 builder.Services.AddControllersWithViews();

@@ -1,5 +1,4 @@
 ﻿@using GladiatorHub.Models
-
 @model List<PlayableClass>
 
 @{
@@ -33,7 +32,6 @@
             <div class="col-md-3 col-sm-6 text-center class-item mb-4" onclick="toggleSpecializations(@playableClass.Id)">
                 <div class="card shadow">
                     <img src="@playableClass.IconUrl" alt="@playableClass.Name Icon" class="card-img-top class-icon" />
-                   
                 </div>
 
                 <!-- Specializations for this class -->
@@ -44,7 +42,10 @@
                         foreach (var specialization in specializations)
                         {
                             <div class="specialization-item mb-2">
-                                <a href="@Url.Action("SoloShuffle", "Leaderboards", new {klasa = playableClass.Name.ToLower().Replace(" ", "-"), spec = specialization.Name.ToLower().Replace(" ", "-") })" class="text-decoration-none">
+                                <a href="@Url.Action("SoloShuffle", "Leaderboards", new {
+                            klasa = Uri.EscapeDataString(playableClass.Name.ToLower().Replace(" ", "-")),
+                            spec = Uri.EscapeDataString(specialization.Name.ToLower().Replace(" ", "-"))
+                        })" class="text-decoration-none">
                                     <img src="@specialization.IconUrl" alt="@specialization.Name Icon" class="specialization-icon" />
                                     <p>@specialization.Name</p>
                                 </a>
@@ -54,12 +55,25 @@
                 </div>
             </div>
         }
-    </div>
-</div>
+
 
 <script>
+   
     function toggleSpecializations(classId) {
         const specDiv = document.getElementById('specializations-' + classId);
-        specDiv.style.display = specDiv.style.display === 'none' ? 'block' : 'none';
+        const loadingSpinner = document.getElementById('loading-spinner-' + classId);
+
+        if (specDiv.style.display === 'none') {
+            specDiv.style.display = 'block';
+            loadingSpinner.style.display = 'none'; 
+        } else {
+            specDiv.style.display = 'none';
+            loadingSpinner.style.display = 'block';
+        }
     }
+
+    
+    document.addEventListener('DOMContentLoaded', function () {
+     
+    });
 </script>

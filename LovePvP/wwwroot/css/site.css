@@ -1,9 +1,7 @@
-﻿
-
-/* General styles for the page */
+﻿/* General styles for the page */
 body {
     font-family: 'Arial', sans-serif;
-    background: #ffffff;
+    background: #f8f9fa; /* Slight off-white background for a soft feel */
     margin: 0;
     padding: 0;
 }
@@ -32,7 +30,7 @@ body {
     border: 1px solid #ddd;
     margin-top: 8px;
     box-sizing: border-box;
-    transition: border-color 0.3s;
+    transition: border-color 0.3s ease;
 }
 
     .search-input:focus {
@@ -63,72 +61,106 @@ body {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 10px; /* Razmak između ikona */
+    gap: 15px; /* Adjust gap between icons */
     padding: 20px;
 }
 
 /* Class item styles */
 .class-item {
     text-align: center;
-    width: 60px; /* Manja širina da stanu u jedan red */
+    width: 70px; /* Increased width for better alignment */
     cursor: pointer;
     transition: transform 0.3s ease-in-out;
+    position: relative; /* To position the loading spinner */
 }
+
+    .class-item:hover {
+        transform: scale(1.05); /* Small scale on hover for better interactivity */
+    }
 
 /* Icon styles */
 .class-icon {
-    width: 50px; /* Manja širina ikona */
-    height: 50px; /* Manja visina ikona */
+    width: 60px; /* Slightly larger icon for better visibility */
+    height: 60px; /* Match height and width for a balanced look */
     border-radius: 50%;
     object-fit: cover;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Hover effects on icons */
 .class-item:hover .class-icon {
-    transform: scale(1.2); /* Blago povećanje ikona prilikom hover-a */
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Dodavanje sjenke */
+    transform: scale(1.2); /* Slight increase in size on hover */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
 }
 
-/* Spec item styles */
+/* Specialization section styles */
 .specializations {
-    display: none; /* Skrivene specijalizacije po defaultu */
+    display: none; /* Hidden by default */
     margin-top: 10px;
     display: flex;
-    justify-content: center; /* Centriramo spec ikone */
-    gap: 15px; /* Razmak između spec ikona */
+    justify-content: center;
+    gap: 15px; /* Increased gap between specialization icons */
+    flex-wrap: wrap;
 }
 
-/* Specijalizacija pojedinačna stavka */
 .specialization-item {
     text-align: center;
     cursor: pointer;
     transition: transform 0.3s ease-in-out;
 }
 
-/* Spec ikone */
 .specialization-icon {
-    width: 40px; /* Manja širina ikona specova */
-    height: 40px; /* Manja visina ikona specova */
-    border-radius: 50%; /* Okrugli oblik kao kod klasa */
-    object-fit: cover; /* Osiguravamo da slika lepo stane */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Blaga sjenka */
+    width: 45px; /* Slightly larger specialization icons */
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Hover efekat na spec ikonama */
 .specialization-item:hover .specialization-icon {
-    transform: scale(1.1); /* Blago povećanje na hover */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Dodavanje izraženije sjenke */
+    transform: scale(1.1); /* Slight increase in size */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* More pronounced shadow */
 }
 
-/* Tekst specova */
 .specialization-item p {
-    margin-top: 5px; /* Mali razmak ispod ikone */
-    font-size: 12px; /* Manji font za naziv specova */
+    margin-top: 5px;
+    font-size: 12px;
     color: #555;
 }
+
+/* Loading spinner */
+.loading-spinner {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 30px;
+    color: #007bff;
+}
+
+/* Card hover effect */
+.class-item:hover .card {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
+
+/* Specialization section toggle (default is hidden) */
+.specializations {
+    display: none;
+}
+
+.specialization-item {
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+    .specialization-item:hover {
+        background-color: #f8f9fa;
+    }
+
+/* Leaderboard table */
 .leaderboard-table {
     width: 100%;
     border-collapse: collapse;
@@ -144,17 +176,33 @@ body {
     .leaderboard-table th {
         background-color: #f4f4f4;
     }
+
 /* Responsive Design Adjustments */
 @media (max-width: 768px) {
     .specialization-icon {
-        width: 35px; /* Smanjenje veličine spec ikona na manjim ekranima */
-        height: 35px;
+        width: 40px; /* Smaller icons for mobile */
+        height: 40px;
     }
 
     .specialization-item p {
-        font-size: 11px; /* Smanjeni tekst za manje ekrane */
+        font-size: 11px; /* Smaller text for mobile */
+    }
+
+    .class-item {
+        width: 80px; /* Slightly larger width for better display on mobile */
+    }
+
+    .class-icon {
+        width: 50px; /* Adjust icon size for mobile */
+        height: 50px;
+    }
+
+    .search-input, .search-button {
+        font-size: 14px; /* Adjust input and button font size on smaller screens */
     }
 }
 
-
-
+/* Add a smooth scroll for better UX on long pages */
+html {
+    scroll-behavior: smooth;
+}

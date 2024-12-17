@@ -1,9 +1,10 @@
 using GladiatorHub.Models;
-using GladiatorHub.Mappings;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using GladiatorHub.Models.GladiatorHub.Models;
+using Microsoft.Extensions.Caching.Memory;
+
+
+
 
 namespace GladiatorHub.Controllers
 {
@@ -11,55 +12,104 @@ namespace GladiatorHub.Controllers
     {
         private readonly BlizzardApiService _blizzardApiService;
         private readonly ILogger<HomeController> _logger;
+        private readonly IMemoryCache _cache;
 
-        public HomeController(BlizzardApiService blizzardApiService, ILogger<HomeController> logger)
+        public HomeController(BlizzardApiService blizzardApiService, ILogger<HomeController> logger, IMemoryCache cache)
         {
             _logger = logger;
             _blizzardApiService = blizzardApiService;
+            _cache = cache;
         }
 
+      
         public async Task<IActionResult> Index()
         {
-            // Fetch all playable classes
-            var playableClasses = await _blizzardApiService.GetPlayableClassesAsync();
-
-            // Fetch specializations for each class asynchronously
-            var classSpecializations = new Dictionary<int, List<PlayableSpecialization>>();
-
-            foreach (var playableClass in playableClasses)
+            try
             {
-                // Await asynchronous operation for specializations
-                var specializations = await _blizzardApiService.GetSpecializationsForClassAsync(playableClass.Id);
-
-                if (specializations != null)
+                // Attempt to get the playable classes from cache first
+                List<PlayableClass> playableClasses;
+                if (!_cache.TryGetValue("PlayableClasses", out playableClasses))
                 {
-                    // Map specializations asynchronously
-                    var specializationList = new List<PlayableSpecialization>();
-                    foreach (var spec in specializations)
+                    // If not cached, fetch from the API
+                    playableClasses = await _blizzardApiService.GetPlayableClassesAsync();
+
+                    // Cache the result for subsequent requests (e.g., cache for 1 hour)
+                    _cache.Set("PlayableClasses", playableClasses, TimeSpan.FromHours(1));
+                }
+
+                // Fetch specializations for all playable classes in parallel
+                var specializationTasks = playableClasses.Select(async playableClass =>
+                {
+                    // For each class, fetch its specializations and icon URLs in parallel
+                    var specializations = await _blizzardApiService.GetSpecializationsForClassAsync(playableClass.Id);
+
+                    // Fetch all specialization icons in parallel
+                    var tasks = specializations.Select(async spec =>
                     {
-                        var specializationIconUrl = await _blizzardApiService.GetSpecializationIconUrlAsync(spec.Key);
-                        specializationList.Add(new PlayableSpecialization
+                        var iconUrl = await _blizzardApiService.GetSpecializationIconUrlAsync(spec.Key);
+                        return new PlayableSpecialization
                         {
                             Id = spec.Key,
                             Name = spec.Value,
-                            IconUrl = specializationIconUrl
-                        });
-                    }
+                            IconUrl = iconUrl
+                        };
+                    });
 
-                    // Add to the dictionary
-                    classSpecializations[playableClass.Id] = specializationList;
-                }
+                    // Return class ID and its list of specializations
+                    return new
+                    {
+                        ClassId = playableClass.Id,
+                        Specializations = await Task.WhenAll(tasks)
+                    };
+                }).ToArray(); // Convert to array to start the tasks in parallel
+
+                // Await all tasks in parallel to get specialization data
+                var results = await Task.WhenAll(specializationTasks);
+
+                // Organize the results by class ID
+                var classSpecializations = results.ToDictionary(x => x.ClassId, x => x.Specializations.ToList());
+
+                // Pass the class-specialization data to the View
+                ViewBag.ClassSpecializations = classSpecializations;
+
+                // Return the playable classes to the View
+                return View(playableClasses);
             }
+            catch (Exception ex)
+            {
+                // Log the exception with detailed information
+                _logger.LogError(ex, "An error occurred while fetching playable classes and specializations.");
 
-            // Pass the specializations data to the view
-            ViewBag.ClassSpecializations = classSpecializations;
-            return View(playableClasses);
+                // Provide a user-friendly error message
+                ViewBag.ErrorMessage = "An error occurred while fetching the data. Please try again later.";
+
+                // Return the Index view with an error message
+                return View();
+            }
         }
 
+        // Action to handle the Solo Shuffle leaderboard redirection
         public IActionResult SoloShuffle(string spec)
         {
-            // Redirect to the Solo Shuffle leaderboard page
-            return Redirect($"https://worldofwarcraft.com/en-us/pvp/leaderboards/shuffle-{spec}");
+            try
+            {
+                if (string.IsNullOrEmpty(spec))
+                {
+                    return RedirectToAction("Index");
+                }
+
+                // Redirect to the Solo Shuffle leaderboard page on Blizzard website
+                return Redirect($"https://worldofwarcraft.com/en-us/pvp/leaderboards/shuffle-{spec}");
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                _logger.LogError(ex, "An error occurred while processing the Solo Shuffle redirect.");
+
+                // Provide a user-friendly error message and redirect to the Index
+                ViewBag.ErrorMessage = "An error occurred while processing your request. Please try again later.";
+                return RedirectToAction("Index");
+            }
         }
     }
 }
