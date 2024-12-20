@@ -4,8 +4,6 @@ using GladiatorHub.Models.GladiatorHub.Models;
 using Microsoft.Extensions.Caching.Memory;
 
 
-
-
 namespace GladiatorHub.Controllers
 {
     public class HomeController : Controller

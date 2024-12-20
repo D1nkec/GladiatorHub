@@ -36,7 +36,8 @@ public class Realm
 
 public class Faction
 {
-    public string Type { get; set; }  
+    public string Type { get; set; }
+    public string IconUrl { get; set; }
 }
 
 

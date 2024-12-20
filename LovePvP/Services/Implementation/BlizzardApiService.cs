@@ -347,6 +347,15 @@ public class BlizzardApiService
                 IconUrl = GetSpecializationIconUrlAsync(spec.GetProperty("id").GetInt32()).Result
             }).ToList();
     }
+    public string GetFactionIconUrl(string factionType)
+    {
+        return factionType.ToLower() switch
+        {
+            "horde" => "https://wowpedia.fandom.com/wiki/Category:Faction_icons?file=Stormwind.png",
+            "alliance" => "https://render.worldofwarcraft.com/icons/alliance-icon.png",
+            _ => "/images/unknown-icon.png" // Fallback for unknown factions
+        };
+    }
 
 
     private string GetStringProperty(JsonElement element, string propertyName)

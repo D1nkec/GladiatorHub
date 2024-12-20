@@ -2,33 +2,58 @@
 
 <h1>2v2 Arena Leaderboard</h1>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Rank</th>
-            <th>Player Name</th>
-            <th>Realm</th>
-            <th>Faction</th>
-            <th>Rating</th>
-            <th>Matches Played</th>
-            <th>Matches Won</th>
-            <th>Matches Lost</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var entry in Model)
-        {
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-warning">
+        No data available for the selected page.
+    </div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
             <tr>
-                <td>@entry.Rank</td>
-                <td>@entry.Player.Name</td>
-                <td>@entry.Player.Realm.Slug</td>
-                <td>@entry.Faction.Type</td>
-                <td>@entry.Rating</td>
-                <td>@entry.SeasonMatchStatistics.Played</td>
-                <td>@entry.SeasonMatchStatistics.Won</td>
-                <td>@entry.SeasonMatchStatistics.Lost</td>
+                <th>Rank</th>
+                <th>Player Name</th>
+                <th>Realm</th>
+                <th>Faction</th>
+                <th>Rating</th>
+                <th>Matches Played</th>
+                <th>Matches Won</th>
+                <th>Matches Lost</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model)
+            {
+                <tr>
+                    <td>@entry.Rank</td>
+                    <td>@entry.Player.Name</td>
+                    <td>@entry.Player.Realm.Slug</td>
+                    <td>@entry.Faction.Type</td>
+                    <td>@entry.Rating</td>
+                    <td>@entry.SeasonMatchStatistics.Played</td>
+                    <td>@entry.SeasonMatchStatistics.Won</td>
+                    <td>@entry.SeasonMatchStatistics.Lost</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
+<div class="pagination">
+    @if (ViewBag.CurrentPage > 1)
+    {
+        <a href="?page=@(ViewBag.CurrentPage - 1)" class="btn btn-primary">Previous</a>
+    }
+
+    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+    {
+        <a href="?page=@i" class="btn @(i == ViewBag.CurrentPage ? "btn-secondary active" : "btn-light")">@i</a>
+    }
+
+    @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+    {
+        <a href="?page=@(ViewBag.CurrentPage + 1)" class="btn btn-primary">Next</a>
+    }
+</div>
