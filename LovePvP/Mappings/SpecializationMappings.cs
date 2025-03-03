@@ -20,7 +20,7 @@
             { 70, "Retribution" },
             { 71, "Arms" },
             { 73, "Protection" },
-            { 253, "Beast Mastery" },
+            { 253, "BeastMastery" },
             { 254, "Marksmanship" },
             { 258, "Shadow" },
             { 261, "Subtlety" },

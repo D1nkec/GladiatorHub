@@ -20,6 +20,8 @@ namespace GladiatorHub.Controllers
             var pvpSummary = await _blizzardApiService.GetCharacterPvpSummaryAsync(realmSlug, characterName);
 
             pvpSummary.SoloShuffleRating = await _blizzardApiService.GetSoloShuffleRatingAsync(realmSlug, characterName);
+            pvpSummary.BgBlitzRating = await _blizzardApiService.GetBgBlitzRatingAsync(realmSlug, characterName);
+            pvpSummary.ArenaRating = await _blizzardApiService.GetArenaRatingAsync(realmSlug, characterName);
             return View(pvpSummary);
         }
 

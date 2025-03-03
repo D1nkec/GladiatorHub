@@ -16,7 +16,7 @@
             { "feral", "Feral" },
             { "guardian", "Guardian" },
             { "restoration", "Restoration" },
-            { "beast-mastery", "Beast Mastery" },
+            { "beastmastery", "BeastMastery" },
             { "marksmanship", "Marksmanship" },
             { "survival", "Survival" },
             { "brewmaster", "Brewmaster" },

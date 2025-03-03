@@ -2,6 +2,7 @@
 using GladiatorHub.Models;
 using GladiatorHub.Models.GladiatorHub.Models;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 public class BlizzardApiService
@@ -88,6 +89,97 @@ public class BlizzardApiService
     }
 
 
+
+    //Get Arena rating
+    public async Task<Dictionary<string, int>> GetArenaRatingAsync(string realmSlug, string characterName)
+    {
+        var accessToken = await GetAccessTokenAsync();
+        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/profile/wow/character/{realmSlug}/{characterName}/pvp-summary?namespace=profile-us";
+
+        var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+        var ratings = new Dictionary<string, int>();
+
+        if (jsonDoc.RootElement.TryGetProperty("brackets", out var brackets))
+        {
+            foreach (var bracket in brackets.EnumerateArray())
+            {
+                if (bracket.TryGetProperty("href", out var hrefElement))
+                {
+                    var href = hrefElement.GetString();
+                    if (href.Contains("/2v2") || href.Contains("/3v3"))
+                    {
+                        var bracketType = href.Contains("/2v2") ? "2v2" : "3v3";
+                        var rating = await GetRatingFromBracketAsync(href, accessToken);
+                        ratings[bracketType] = rating;
+                    }
+                }
+            }
+        }
+
+        return ratings;
+    }
+
+
+
+
+    public async Task<List<LeaderboardEntry>> GetSortedSoloShuffleLeaderboardAsync(int seasonId)
+    {
+        var leaderboardResponse = await GetPvpLeaderboardAsync(seasonId, "shuffle");
+
+        if (leaderboardResponse.Data == null || leaderboardResponse.Data.Entries.Count == 0)
+        {
+            return new List<LeaderboardEntry>(); // Vraća prazan popis ako nema podataka
+        }
+
+        // Sortiranje igrača po ratingu silazno
+        return leaderboardResponse.Data.Entries
+            .OrderByDescending(entry => entry.Rating)
+            .ToList();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Get BG Blitz rating
+public async Task<Dictionary<string, int>> GetBgBlitzRatingAsync(string realmSlug, string characterName)
+    {
+        var accessToken = await GetAccessTokenAsync();
+        var apiUrl = $"{_configuration["Blizzard:ApiBaseUrl"]}/profile/wow/character/{realmSlug}/{characterName}/pvp-summary?namespace=profile-us";
+
+        var jsonDoc = await FetchJsonAsync(apiUrl, accessToken);
+        var ratings = new Dictionary<string, int>();
+
+        if (jsonDoc.RootElement.TryGetProperty("brackets", out var brackets))
+        {
+            foreach (var bracket in brackets.EnumerateArray())
+            {
+                if (bracket.TryGetProperty("href", out var hrefElement))
+                {
+                    var href = hrefElement.GetString();
+                    if (href.Contains("blitz"))
+                    {
+                        var spec = DetermineSpecFromHref(href);
+                        var rating = await GetRatingFromBracketAsync(href, accessToken);
+                        ratings[spec] = rating;
+                    }
+                }
+            }
+        }
+
+        return ratings;
+    }
+
+
+
     // GET Solo Shuffle rating
     public async Task<Dictionary<string, int>> GetSoloShuffleRatingAsync(string realmSlug, string characterName)
     {
@@ -126,6 +218,7 @@ public class BlizzardApiService
 
         return "Unknown";
     }
+
 
 
     private async Task<int> GetRatingFromBracketAsync(string url, string accessToken)

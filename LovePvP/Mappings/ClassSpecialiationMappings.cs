@@ -6,7 +6,7 @@
         {
             { 1, new Dictionary<int, string> { { 71, "Arms" }, { 72, "Fury" }, { 73, "Protection" } } },
             { 2, new Dictionary<int, string> { { 70, "Retribution" },{65,"Holy" }, { 66, "Protection" } } }, 
-            { 3, new Dictionary<int, string> { { 253, "Beast Mastery" }, { 254, "Marksmanship" }, { 255, "Survival" } } }, 
+            { 3, new Dictionary<int, string> { { 253, "BeastMastery" }, { 254, "Marksmanship" }, { 255, "Survival" } } }, 
             { 4, new Dictionary<int, string> { { 259, "Assassination" }, { 261, "Subtlety" }, { 260, "Outlaw" } } }, 
             { 5, new Dictionary<int, string> { { 256, "Discipline" }, { 258, "Shadow" }, { 257, "Holy" } } }, 
             { 6, new Dictionary<int, string> { { 250, "Blood" }, { 251, "Frost" }, { 252, "Unholy" } } }, 

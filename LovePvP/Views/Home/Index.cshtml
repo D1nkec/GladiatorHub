@@ -44,7 +44,7 @@
                         foreach (var specialization in specializations)
                         {
                             <div class="specialization-item mb-2">
-                                <a href="@Url.Action("SoloShuffle", "Leaderboards", new {klasa = playableClass.Name.ToLower().Replace(" ", "-"), spec = specialization.Name.ToLower().Replace(" ", "-") })" class="text-decoration-none">
+                                <a href="@Url.Action("SoloShuffle", "Leaderboards", new {klasa = playableClass.Name.ToLower().Replace(" ", ""), spec = specialization.Name.ToLower().Replace(" ","") })" class="text-decoration-none">
                                     <img src="@specialization.IconUrl" alt="@specialization.Name Icon" class="specialization-icon" />
                                     <p>@specialization.Name</p>
                                 </a>

@@ -89,6 +89,8 @@ namespace GladiatorHub.Controllers
                     return View("Error", new ErrorViewModel { Message = "Specialization is required." });
                 }
 
+                ViewData["Spec"] = spec;
+
                 // Get the current PvP season
                 var currentSeason = await _blizzardApiService.GetCurrentSeasonAsync();
 

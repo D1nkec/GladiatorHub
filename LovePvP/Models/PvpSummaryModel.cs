@@ -8,6 +8,8 @@
         public int HonorableKills { get; set; }
         public List<MapStatistics> PvpMapStatistics { get; set; }
         public Dictionary<string, int> SoloShuffleRating { get; set; }
+        public Dictionary<string, int> BgBlitzRating { get; set; }
+        public Dictionary<string, int> ArenaRating { get; set; }
     }
 
 }

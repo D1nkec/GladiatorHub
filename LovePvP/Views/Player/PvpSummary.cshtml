@@ -35,6 +35,62 @@
     </tbody>
 </table>
 
+<h3>Arena Rating</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            
+            <th>Rating</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.ArenaRating != null && Model.ArenaRating.Any())
+        {
+            foreach (var rating in Model.ArenaRating)
+            {
+                <tr>
+                    <td>@rating.Key</td>
+                    <td>@rating.Value</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="2">No arena ratings available.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h3>Battleground Blitz Ratings by Specialization</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Specialization</th>
+            <th>Rating</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.SoloShuffleRating != null && Model.BgBlitzRating.Any())
+        {
+            foreach (var rating in Model.BgBlitzRating)
+            {
+                <tr>
+                    <td>@rating.Key</td>
+                    <td>@rating.Value</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="2">No specialization ratings available.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
 <h3>PvP Map Statistics</h3>
 <table class="table">
     <thead>

@@ -9,13 +9,13 @@
             { 3, "Hunter" },
             { 4, "Rogue" },
             { 5, "Priest" },
-            { 6, "Death Knight" },
+            { 6, "DeathKnight" },
             { 7, "Shaman" },
             { 8, "Mage" },
             { 9, "Warlock" },
             { 10, "Monk" },
             { 11, "Druid" },
-            { 12, "Demon Hunter" },
+            { 12, "DemonHunter" },
             { 13, "Evoker" }
         };
     }
