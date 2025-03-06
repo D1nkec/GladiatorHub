@@ -1,31 +1,103 @@
 ﻿@model List<LeaderboardEntry>
 
+<h2>Solo Shuffle Leaderboard for @ViewBag.Spec</h2>
 
-<h2>Solo Shuffle Leaderboard for @ViewData["Spec"]</h2>
 
-<table class="leaderboard-table">
+
+<table class="table table-striped">
     <thead>
         <tr>
             <th>Rank</th>
-            <th>Player</th>
+            <th>Player Name</th>
             <th>Realm</th>
+            <th>Faction</th>
             <th>Rating</th>
-            <th>Wins</th>
-            <th>Losses</th>
+            <th>Matches Played</th>
+            <th>Matches Won</th>
+            <th>Matches Lost</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var entry in Model)
         {
-                <tr>
-                    <td>@entry.Rank</td>
-                    <td>@entry.Player.Name</td>
-                    <td>@entry.Player.Realm.Slug</td>
-                    <td>@entry.Rating</td>
-                    <td>@entry.SeasonMatchStatistics.Won</td>
-                    <td>@entry.SeasonMatchStatistics.Lost</td>
-                </tr>
+            <tr>
+                <td>@entry.Rank</td>
+                <td>@entry.Player.Name</td>
+                <td>@entry.Player.Realm.Slug</td>
+                <td>
+                    <img src="@entry.Faction.IconUrl"
+                         style="width: 20px; height: 20px;" />
+                </td>
+                <td>@entry.Rating</td>
+                <td>@entry.SeasonMatchStatistics.Played</td>
+                <td>@entry.SeasonMatchStatistics.Won</td>
+                <td>@entry.SeasonMatchStatistics.Lost</td>
+            </tr>
         }
     </tbody>
 </table>
+<div class="d-flex justify-content-center my-4">
+    <nav>
+        <ul class="pagination pagination-sm">
+            <!-- Previous Button -->
+            @if (ViewBag.CurrentPage > 1)
+            {
+                <li class="page-item">
+                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", page = ViewBag.CurrentPage - 1 })" class="page-link">Previous</a>
+                </li>
+            }
+
+            @* Determine the range of pages to show *@
+            @{
+                int visibleRange = 5; // Show 5 pages around the current page
+                int startPage = Math.Max(1, ViewBag.CurrentPage - visibleRange);
+                int endPage = Math.Min(ViewBag.TotalPages, ViewBag.CurrentPage + visibleRange);
+            }
+
+            @* Display limited page links *@
+            @if (startPage > 1)
+            {
+                <li class="page-item">
+                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", page = 1 })" class="page-link">1</a>
+                </li>
+                @if (startPage > 2)
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                }
+            }
+
+            @for (int i = startPage; i <= endPage; i++)
+            {
+                <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", page = i })" class="page-link">@i</a>
+                </li>
+            }
+
+            @if (endPage < ViewBag.TotalPages)
+            {
+                @if (endPage < ViewBag.TotalPages - 1)
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                }
+                <li class="page-item">
+                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", page = ViewBag.TotalPages })" class="page-link">@ViewBag.TotalPages</a>
+                </li>
+            }
+
+            <!-- Next Button -->
+            @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+            {
+                <li class="page-item">
+                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", page = ViewBag.CurrentPage + 1 })" class="page-link">Next</a>
+                </li>
+            }
+        </ul>
+    </nav>
+</div>
+
+
 

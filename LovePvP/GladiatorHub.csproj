@@ -7,10 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Services\Interface\**" />
-    <Content Remove="Services\Interface\**" />
-    <EmbeddedResource Remove="Services\Interface\**" />
-    <None Remove="Services\Interface\**" />
+    <Content Update="Views\Shared\_LeaderboardPartial.cshtml">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

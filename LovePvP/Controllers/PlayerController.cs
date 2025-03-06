@@ -6,20 +6,21 @@ namespace GladiatorHub.Controllers
 {
     public class PlayerController : Controller
     {
-        private readonly BlizzardApiService _blizzardApiService;
+        private readonly IPlayerService _playerService;
 
-        public PlayerController(BlizzardApiService blizzardApiService)
+        public PlayerController(IPlayerService playerService)
         {
-            _blizzardApiService = blizzardApiService;
+            _playerService = playerService;
         }
 
 
         [HttpGet]
         public async Task<IActionResult> PvpSummary(string realmSlug, string characterName)
         {
-            var pvpSummary = await _blizzardApiService.GetCharacterPvpSummaryAsync(realmSlug, characterName);
-
-            pvpSummary.SoloShuffleRating = await _blizzardApiService.GetSoloShuffleRatingAsync(realmSlug, characterName);
+            var pvpSummary = await _playerService.GetCharacterPvpSummaryAsync(realmSlug, characterName);
+            pvpSummary.SoloShuffleRating = await _playerService.GetSoloShuffleRatingAsync(realmSlug, characterName);
+            pvpSummary.ArenaRating = await _playerService.GetArenaRatingAsync(realmSlug, characterName);
+            pvpSummary.BgBlitzRating = await _playerService.GetBgBlitzRatingAsync(realmSlug, characterName);
             return View(pvpSummary);
         }
 

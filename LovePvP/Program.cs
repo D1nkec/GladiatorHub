@@ -1,5 +1,7 @@
 
 using GladiatorHub.Models;
+using GladiatorHub.Services.Implementation;
+using GladiatorHub.Services.Interface;
 using Microsoft.Extensions.Configuration;
 
 
@@ -14,16 +16,24 @@ builder.Services.Configure<BlizzardSettings>(builder.Configuration.GetSection("B
 builder.Services.AddHttpClient();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddScoped<BlizzardApiService>();
+
+
+builder.Services.AddScoped<IBlizzardApiService,BlizzardApiService>();
+builder.Services.AddScoped<IPlayerService,PlayerService>();
+builder.Services.AddScoped<ILeaderboardService,LeaderboardService>();
+builder.Services.AddScoped<IGameDataService,GameDataService>();
+
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
+//if (!app.Environment.IsDevelopment())
+//{
+//    app.UseExceptionHandler("/Home/Error");
+//    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+//    app.UseHsts();
+//}
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

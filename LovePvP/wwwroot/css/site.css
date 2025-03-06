@@ -1,17 +1,19 @@
 ﻿/* General styles for the page */
 body {
     font-family: 'Arial', sans-serif;
-    background: #f8f9fa; /* Slight off-white background for a soft feel */
+    background: #fff;
+    background-size: cover;
     margin: 0;
     padding: 0;
 }
+
 
 /* Search container styles */
 .search-container {
     max-width: 600px;
     margin: 40px auto;
     padding: 20px;
-    background-color: #ffffff;
+    background-color: #555;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
 }

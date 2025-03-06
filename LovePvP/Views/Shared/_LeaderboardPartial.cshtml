@@ -1,0 +1,74 @@
+﻿@model List<LeaderboardEntry>
+
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-header">
+        <h5>@ViewBag.GameMode Arena Leaderboard</h5>
+    </div>
+    <div class="card-body">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="alert alert-warning">
+                No data available for the selected page.
+            </div>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player Name</th>
+                        <th>Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model)
+                    {
+                        <tr>
+                            <td>@entry.Rank</td>
+                            <td>@entry.Player.Name</td>
+                            <td>@entry.Rating</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <div class="pagination">
+        @if (ViewBag.CurrentPage > 1)
+        {
+            <a href="javascript:void(0);" onclick="loadLeaderboard(@ViewBag.CurrentPage - 1)" class="btn btn-primary">Previous</a>
+        }
+
+        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+        {
+            <a href="javascript:void(0);" onclick="loadLeaderboard(@i)" class="btn @(i == ViewBag.CurrentPage ? "btn-secondary active" : "btn-light")">@i</a>
+        }
+
+        @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+        {
+            <a href="javascript:void(0);" onclick="loadLeaderboard(@ViewBag.CurrentPage + 1)" class="btn btn-primary">Next</a>
+        }
+    </div>
+</div>
+
+<script>
+    function loadLeaderboard(page) {
+        $.ajax({
+            url: '@Url.Action("FetchLeaderboardDataAsync", "Home")', // Ensure this matches your route
+            data: { gameMode: '@ViewBag.GameMode', page: page },
+            type: 'GET',
+            success: function (data) {
+                // Update the leaderboard content
+                $('#leaderboard-container').html($(data).find('#leaderboard-container').html());
+
+                // Update the pagination content
+                $('#pagination-container').html($(data).find('#pagination-container').html());
+            },
+            error: function () {
+                alert("Error loading leaderboard.");
+            }
+        });
+    }
+</script>

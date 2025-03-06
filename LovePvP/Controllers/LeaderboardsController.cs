@@ -1,4 +1,5 @@
 ﻿using GladiatorHub.Models;
+using GladiatorHub.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -10,13 +11,15 @@ namespace GladiatorHub.Controllers
     [Route("leaderboards")]
     public class LeaderboardsController : Controller
     {
-        private readonly BlizzardApiService _blizzardApiService;
+        private readonly IGameDataService _gameDataService;
+        private readonly ILeaderboardService _leaderboardService;
         private readonly ILogger<LeaderboardsController> _logger;
         private const int PageSize = 20; // Number of entries per page
 
-        public LeaderboardsController(BlizzardApiService blizzardApiService, ILogger<LeaderboardsController> logger)
+        public LeaderboardsController(IGameDataService gameDataService, ILeaderboardService leaderBoardService, ILogger<LeaderboardsController> logger)
         {
-            _blizzardApiService = blizzardApiService;
+            _gameDataService = gameDataService;
+            _leaderboardService = leaderBoardService;
             _logger = logger;
         }
 
@@ -25,8 +28,8 @@ namespace GladiatorHub.Controllers
         {
             try
             {
-                var currentSeason = await _blizzardApiService.GetCurrentSeasonAsync();
-                var apiResponse = await _blizzardApiService.GetPvpLeaderboardAsync(currentSeason, gameMode);
+                var currentSeason = await _leaderboardService.GetCurrentSeasonAsync();
+                var apiResponse = await _leaderboardService.GetPvpLeaderboardAsync(currentSeason, gameMode);
                 var leaderboard = apiResponse.Data;
 
                 if (leaderboard == null || leaderboard.Entries == null || leaderboard.Entries.Count == 0)
@@ -44,7 +47,7 @@ namespace GladiatorHub.Controllers
                 // Assign faction icons dynamically
                 foreach (var entry in paginatedEntries)
                 {
-                    entry.Faction.IconUrl = _blizzardApiService.GetFactionIconUrl(entry.Faction.Type);
+                    entry.Faction.IconUrl = _gameDataService.GetFactionIconUrl(entry.Faction.Type);
                 }
 
                 // Pagination metadata
@@ -98,53 +101,59 @@ namespace GladiatorHub.Controllers
         {
             try
             {
-                // Validate inputs
                 if (string.IsNullOrEmpty(spec) || string.IsNullOrEmpty(klasa))
                 {
                     _logger.LogWarning("Missing specialization or class in SoloShuffle.");
                     return View("Error", new ErrorViewModel { Message = "Both specialization and class are required." });
                 }
 
-                // Format the specialization and class for the API
-                var formattedSpec = spec.ToLower().Replace(" ", "-");
-                var formattedKlasa = klasa.ToLower().Replace(" ", "-");
-
-                // Construct the leaderboard key
+                // Format parameters
+                var formattedSpec = spec.ToLower().Replace("-", "");
+                var formattedKlasa = klasa.ToLower().Replace("-", "");
                 var leaderboardKey = $"shuffle-{formattedKlasa}-{formattedSpec}";
 
-                // Get the current PvP season
-                var currentSeason = await _blizzardApiService.GetCurrentSeasonAsync();
-                var leaderboardResponse = await _blizzardApiService.GetPvpLeaderboardAsync(currentSeason, leaderboardKey);
+                // Fetch leaderboard data
+                var currentSeason = await _leaderboardService.GetCurrentSeasonAsync();
+                var leaderboardResponse = await _leaderboardService.GetPvpLeaderboardAsync(currentSeason, leaderboardKey);
+                var leaderboardEntries = leaderboardResponse?.Data?.Entries;
 
-                // Check for missing or empty leaderboard data
-                if (leaderboardResponse.Data == null || leaderboardResponse.Data.Entries == null || leaderboardResponse.Data.Entries.Count == 0)
+                if (leaderboardEntries == null || leaderboardEntries.Count == 0)
                 {
                     _logger.LogWarning($"No leaderboard data found for specialization {spec} in class {klasa}.");
                     return View("Error", new ErrorViewModel { Message = $"No leaderboard data found for {spec} in {klasa}." });
                 }
 
-                // Apply pagination
-                var paginatedEntries = leaderboardResponse.Data.Entries
+                // Calculate pagination
+                int totalEntries = leaderboardEntries.Count;
+                int totalPages = (int)Math.Ceiling((double)totalEntries / PageSize);
+
+                // Ensure page is within bounds
+                page = Math.Max(1, Math.Min(page, totalPages)); // Ensures page is at least 1 and at most totalPages
+
+                // Pagination logic
+                var paginatedEntries = leaderboardEntries
                     .Skip((page - 1) * PageSize)
                     .Take(PageSize)
                     .ToList();
 
-                // Check if the page has no data
-                if (!paginatedEntries.Any())
+                // Ensure faction icons are assigned
+                foreach (var entry in paginatedEntries)
                 {
-                    _logger.LogWarning($"No data found for {spec} in {klasa} on page {page}.");
-                    return View("Error", new ErrorViewModel { Message = $"No data found for {spec} in {klasa} on page {page}." });
+                    entry.Faction.IconUrl = _gameDataService.GetFactionIconUrl(entry.Faction.Type);
                 }
 
-                // Prepare the pagination metadata
-                var totalPages = (int)Math.Ceiling((double)leaderboardResponse.Data.Entries.Count / PageSize);
+                // Ensure there is at least 1 page, even if it's empty
+                if (totalPages == 0)
+                    totalPages = 1;
 
+                // Pass metadata to the view
                 ViewBag.CurrentPage = page;
                 ViewBag.TotalPages = totalPages;
-                ViewBag.Spec = spec;
-                ViewBag.Klasa = klasa;
+                ViewBag.Spec = spec;  // Make sure spec is stored
+                ViewBag.Klasa = klasa; // Make sure klasa is stored
 
-                return View("Leaderboard", paginatedEntries);
+
+                return View("SoloShuffle", paginatedEntries);
             }
             catch (HttpRequestException httpEx)
             {
@@ -162,5 +171,7 @@ namespace GladiatorHub.Controllers
                 return View("Error", new ErrorViewModel { Message = "An unexpected error occurred. Please try again later." });
             }
         }
+
+
     }
 }

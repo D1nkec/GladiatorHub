@@ -1,0 +1,81 @@
+﻿@model List<LeaderboardEntry>
+
+@if (Model != null && Model.Count > 0)
+{
+    <div class="card leaderboard-card">
+        <div class="card-body">
+            <h5 class="card-title text-center">
+                @if (ViewBag.GameMode == "2v2")
+                {
+                    <span>2v2 Leaderboard</span>
+                }
+                else if (ViewBag.GameMode == "3v3")
+                {
+                    <span>3v3 Leaderboard</span>
+                } 
+                else if (ViewBag.GameMode == "rbg")
+                {
+                    <span>Rated Battlegrounds Leaderboard</span>
+                }
+                else
+                {
+                    <span>Leaderboard</span>
+                }
+            </h5>
+
+            <table class="table table-striped text-center">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Character Name</th>
+                        <th>Rating</th>
+                        <th>Faction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model)
+                    {
+                        <tr>
+                            <td>#@entry.Rank</td>
+                            <td>@entry.Player.Name</td>
+                            <td>@entry.Rating</td>
+                            <td>
+                                <img src="@entry.Faction.IconUrl" alt="Faction" width="20" height="20" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!--  Pagination Controls -->
+    <nav>
+        <ul class="pagination justify-content-center">
+            @if (ViewBag.CurrentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="javascript:void(0);" onclick="loadLeaderboard('@ViewBag.GameMode', @(ViewBag.CurrentPage - 1))">Previous</a>
+                </li>
+            }
+
+            @for (var i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="javascript:void(0);" onclick="loadLeaderboard('@ViewBag.GameMode', @i)">@i</a>
+                </li>
+            }
+
+            @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="javascript:void(0);" onclick="loadLeaderboard('@ViewBag.GameMode', @(ViewBag.CurrentPage + 1))">Next</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+else
+{
+    <p class="text-center">No leaderboard data available.</p>
+}

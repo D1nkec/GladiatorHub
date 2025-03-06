@@ -43,9 +43,9 @@
                         {
                             <div class="specialization-item mb-2">
                                 <a href="@Url.Action("SoloShuffle", "Leaderboards", new {
-                            klasa = Uri.EscapeDataString(playableClass.Name.ToLower().Replace(" ", "-")),
-                            spec = Uri.EscapeDataString(specialization.Name.ToLower().Replace(" ", "-"))
-                        })" class="text-decoration-none">
+                                    klasa = Uri.EscapeDataString(playableClass.Name.ToLower().Replace(" ", "-")),
+                                    spec = Uri.EscapeDataString(specialization.Name.ToLower().Replace(" ", "-"))
+                                })" class="text-decoration-none">
                                     <img src="@specialization.IconUrl" alt="@specialization.Name Icon" class="specialization-icon" />
                                     <p>@specialization.Name</p>
                                 </a>
@@ -55,25 +55,77 @@
                 </div>
             </div>
         }
+    </div>
+
+    <h2 class="text-center mt-5">Arena Leaderboards</h2>
+    <div class="d-flex justify-content-center">
+        <div id="leaderboard-container-2v2" class="m-2">
+            @{
+
+                ViewBag.GameMode = "2v2"; 
+            }
+            @Html.Partial("_LeaderboardPartial", (List<LeaderboardEntry>)ViewBag.Leaderboard2v2)
+        </div>
+        <div id="leaderboard-container-3v3" class="m-2">
+            @{
+
+                ViewBag.GameMode = "3v3"; 
+            }
+            @Html.Partial("_LeaderboardPartial", (List<LeaderboardEntry>)ViewBag.Leaderboard3v3)
+        </div>
+        <div id="leaderboard-container-3v3" class="m-2">
+            @{
+
+                ViewBag.GameMode = "rbg"; 
+            }
+            @Html.Partial("_LeaderboardPartial", (List<LeaderboardEntry>)ViewBag.LeaderboardRbg)
+        </div>
+    </div>
 
 
-<script>
-   
+    <script>
+        function loadLeaderboard(gameMode, page) {
+            $.ajax({
+                url: '/Home/FetchLeaderboardDataAsync',
+                data: { gameMode: gameMode, page: page },
+                type: 'GET',
+                success: function (data) {
+                    if (gameMode === "2v2") {
+                        $('#leaderboard-container-2v2').html(data);
+                    } else if (gameMode === "3v3") {
+                        $('#leaderboard-container-3v3').html(data)
+                        else if (gameMode === "rbg") {
+                        $('#leaderboard-container-rbg').html(data);
+                    }
+                },
+                error: function () {
+                    console.error("Error loading leaderboard.");
+                    alert("Failed to load leaderboard. Please try again.");
+                }
+            });
+        }
+
+        //Ensure leaderboards load on page load
+        $(document).ready(function () {
+            loadLeaderboard("2v2", 1);
+            loadLeaderboard("3v3", 1);
+            loadLeaderboard("rbg", 1);
+        });
+    </script>
+
+
+
+   <script>
     function toggleSpecializations(classId) {
         const specDiv = document.getElementById('specializations-' + classId);
         const loadingSpinner = document.getElementById('loading-spinner-' + classId);
 
-        if (specDiv.style.display === 'none') {
+        if (specDiv.style.display === 'none' || specDiv.style.display === '') {
             specDiv.style.display = 'block';
-            loadingSpinner.style.display = 'none'; 
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
         } else {
             specDiv.style.display = 'none';
-            loadingSpinner.style.display = 'block';
+            if (loadingSpinner) loadingSpinner.style.display = 'block';
         }
     }
-
-    
-    document.addEventListener('DOMContentLoaded', function () {
-     
-    });
-</script>
+    </script>
