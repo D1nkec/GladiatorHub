@@ -1,9 +1,14 @@
-﻿using GladiatorHub.Models.GladiatorHub.Models;
-using GladiatorHub.Models;
+﻿using GladiatorHub.Models;
+using GladiatorHub.Models.GladiatorHub.Models;
 using GladiatorHub.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
-using GladiatorHub.Services.Implementation;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using static GladiatorHub.Models.BlizzardSettings;
 
 public class HomeController : Controller
 {
@@ -11,7 +16,6 @@ public class HomeController : Controller
     private readonly ILeaderboardService _leaderboardService;
     private readonly ILogger<HomeController> _logger;
     private readonly IMemoryCache _cache;
-   
 
     public HomeController(IGameDataService gameDataService, ILeaderboardService leaderboardService, ILogger<HomeController> logger, IMemoryCache cache)
     {
@@ -55,14 +59,15 @@ public class HomeController : Controller
             var results = await Task.WhenAll(specializationTasks);
             var classSpecializations = results.ToDictionary(x => x.ClassId, x => x.Specializations.ToList());
 
-           
-            var (leaderboard2v2, totalEntries2v2) = await GetLeaderboardData("2v2", 1);
-            var (leaderboard3v3, totalEntries3v3) = await GetLeaderboardData("3v3", 1);
-            var (leaderboardRbg, totalEntriesRbg) = await GetLeaderboardData("rbg", 1);
+            // Default region set to US
+            BlizzardRegion region = BlizzardRegion.US;
+
+            var (leaderboard2v2, totalEntries2v2) = await GetLeaderboardData(region, "2v2", 1);
+            var (leaderboard3v3, totalEntries3v3) = await GetLeaderboardData(region, "3v3", 1);
+            var (leaderboardRbg, totalEntriesRbg) = await GetLeaderboardData(region, "rbg", 1);
 
             int PageSize = 10;
 
-          
             ViewBag.ClassSpecializations = classSpecializations;
             ViewBag.Leaderboard2v2 = leaderboard2v2;
             ViewBag.Leaderboard3v3 = leaderboard3v3;
@@ -70,7 +75,6 @@ public class HomeController : Controller
             ViewBag.TotalPages2v2 = (int)Math.Ceiling((double)totalEntries2v2 / PageSize);
             ViewBag.TotalPages3v3 = (int)Math.Ceiling((double)totalEntries3v3 / PageSize);
             ViewBag.TotalPagesRbg = (int)Math.Ceiling((double)totalEntriesRbg / PageSize);
-
 
             return View(playableClasses);
         }
@@ -82,12 +86,13 @@ public class HomeController : Controller
         }
     }
 
-    private async Task<(List<LeaderboardEntry> Entries, int TotalEntries)> GetLeaderboardData(string gameMode, int page)
+    // Updated GetLeaderboardData with BlizzardRegion parameter
+    private async Task<(List<LeaderboardEntry> Entries, int TotalEntries)> GetLeaderboardData(BlizzardRegion region, string gameMode, int page)
     {
         try
         {
-            var currentSeason = await _leaderboardService.GetCurrentSeasonAsync();
-            var apiResponse = await _leaderboardService.GetPvpLeaderboardAsync(currentSeason, gameMode);
+            var currentSeason = await _leaderboardService.GetCurrentSeasonAsync(region);
+            var apiResponse = await _leaderboardService.GetPvpLeaderboardAsync(region, currentSeason, gameMode);
             var leaderboard = apiResponse?.Data;
 
             if (leaderboard == null || leaderboard.Entries == null || leaderboard.Entries.Count == 0)
@@ -100,7 +105,7 @@ public class HomeController : Controller
             int totalEntries = leaderboard.Entries.Count;
 
             // Apply pagination
-            int PageSize = 10;
+            int PageSize = 25;
             var paginatedEntries = leaderboard.Entries
                 .Skip((page - 1) * PageSize)
                 .Take(PageSize)
@@ -135,18 +140,14 @@ public class HomeController : Controller
     public async Task<IActionResult> FetchLeaderboardDataAsync(string gameMode, int page = 1)
     {
         int pageSize = 10;
-        var (leaderboardEntries, totalEntries) = await GetLeaderboardData(gameMode, page);
 
-        
+        // Assuming BlizzardRegion is defaulting to US, or pass it as parameter
+        var (leaderboardEntries, totalEntries) = await GetLeaderboardData(BlizzardRegion.US, gameMode, page);
+
         ViewBag.CurrentPage = page;
         ViewBag.TotalPages = (int)Math.Ceiling((double)totalEntries / pageSize);
         ViewBag.GameMode = gameMode;
 
         return PartialView("_LeaderboardPartial", leaderboardEntries);
     }
-
-
-
-
-
 }

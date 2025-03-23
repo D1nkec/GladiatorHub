@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using static GladiatorHub.Models.BlizzardSettings;
 
 namespace GladiatorHub.Controllers
 {
@@ -14,31 +15,36 @@ namespace GladiatorHub.Controllers
         private readonly IGameDataService _gameDataService;
         private readonly ILeaderboardService _leaderboardService;
         private readonly ILogger<LeaderboardsController> _logger;
-        private const int PageSize = 20; // Number of entries per page
-
-        public LeaderboardsController(IGameDataService gameDataService, ILeaderboardService leaderBoardService, ILogger<LeaderboardsController> logger)
+        private const int PageSize = 20;
+        public LeaderboardsController(IGameDataService gameDataService, ILeaderboardService leaderboardService, ILogger<LeaderboardsController> logger)
         {
             _gameDataService = gameDataService;
-            _leaderboardService = leaderBoardService;
+            _leaderboardService = leaderboardService;
             _logger = logger;
         }
 
-        // Helper method to handle API data fetching with proper error handling
-        private async Task<IActionResult> FetchLeaderboardDataAsync(string gameMode, int page)
+        // Generic method for fetching leaderboard data with proper error handling
+        private async Task<IActionResult> FetchLeaderboardDataAsync(string gameMode, BlizzardRegion region, int page)
         {
             try
             {
-                var currentSeason = await _leaderboardService.GetCurrentSeasonAsync();
-                var apiResponse = await _leaderboardService.GetPvpLeaderboardAsync(currentSeason, gameMode);
-                var leaderboard = apiResponse.Data;
+                // Fetch current season using the region.
+                var currentSeason = await _leaderboardService.GetCurrentSeasonAsync(region);
 
-                if (leaderboard == null || leaderboard.Entries == null || leaderboard.Entries.Count == 0)
+                // Use the region to call the API.
+                var apiResponse = await _leaderboardService.GetPvpLeaderboardAsync(region, currentSeason, gameMode);
+                var leaderboard = apiResponse?.Data;
+
+                if (leaderboard?.Entries == null || leaderboard.Entries.Count == 0)
                 {
-                    _logger.LogWarning($"No leaderboard data found for {gameMode}.");
-                    return View("Error", new ErrorViewModel { Message = $"No leaderboard data found for {gameMode}." });
+                    _logger.LogWarning($"No leaderboard data found for {gameMode} in {region}.");
+                    return View("Error", new ErrorViewModel { Message = $"No leaderboard data found for {gameMode} in {region}." });
                 }
 
                 // Apply pagination
+                int totalPages = (int)Math.Ceiling((double)leaderboard.Entries.Count / PageSize);
+                page = Math.Max(1, Math.Min(page, totalPages));
+
                 var paginatedEntries = leaderboard.Entries
                     .Skip((page - 1) * PageSize)
                     .Take(PageSize)
@@ -50,60 +56,64 @@ namespace GladiatorHub.Controllers
                     entry.Faction.IconUrl = _gameDataService.GetFactionIconUrl(entry.Faction.Type);
                 }
 
-                // Pagination metadata
-                var totalPages = (int)Math.Ceiling((double)leaderboard.Entries.Count / PageSize);
+                // Ensure at least 1 page exists
+                if (totalPages == 0) totalPages = 1;
 
                 ViewBag.CurrentPage = page;
                 ViewBag.TotalPages = totalPages;
                 ViewBag.GameMode = gameMode;
+                ViewBag.Region = region;
 
                 return View("Leaderboard", paginatedEntries);
             }
             catch (HttpRequestException httpEx)
             {
-                _logger.LogError(httpEx, "Error fetching leaderboard data from Blizzard API.");
+                _logger.LogError(httpEx, $"Error fetching {gameMode} leaderboard data from Blizzard API for {region}.");
                 return View("Error", new ErrorViewModel { Message = "Error connecting to Blizzard API. Please try again later." });
             }
             catch (TimeoutException timeoutEx)
             {
-                _logger.LogError(timeoutEx, "Request timed out while fetching leaderboard data.");
+                _logger.LogError(timeoutEx, $"Request timed out while fetching {gameMode} leaderboard data for {region}.");
                 return View("Error", new ErrorViewModel { Message = "The request timed out. Please try again later." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An unexpected error occurred.");
+                _logger.LogError(ex, $"An unexpected error occurred while fetching {gameMode} leaderboard for {region}.");
                 return View("Error", new ErrorViewModel { Message = "An unexpected error occurred. Please try again later." });
             }
-        
-    
-    }
-
-    [HttpGet("2v2")]
-        public async Task<IActionResult> TwoVsTwo(int page = 1)
-        {
-            return await FetchLeaderboardDataAsync("2v2", page);
         }
 
-        [HttpGet("3v3")]
-        public async Task<IActionResult> ThreeVsThree(int page = 1)
+        [HttpGet("2v2")]
+        public async Task<IActionResult> TwoVsTwo(BlizzardRegion region = BlizzardRegion.US, int page = 1)
         {
-            return await FetchLeaderboardDataAsync("3v3", page);
+            ViewBag.Region = region.ToString();
+            return await FetchLeaderboardDataAsync("2v2", region, page);
+        }
+
+
+        [HttpGet("3v3")]
+        public async Task<IActionResult> ThreeVsThree(BlizzardRegion region = BlizzardRegion.US, int page = 1)
+        {
+            ViewBag.Region = region.ToString();
+            return await FetchLeaderboardDataAsync("3v3", region, page);
         }
 
         [HttpGet("rated-bg")]
-        public async Task<IActionResult> RatedBg(int page = 1)
+        public async Task<IActionResult> RatedBg(BlizzardRegion region = BlizzardRegion.US, int page = 1)
         {
-            return await FetchLeaderboardDataAsync("rbg", page);
+            ViewBag.Region = region.ToString();
+            return await FetchLeaderboardDataAsync("rbg", region, page);
         }
 
+
         [HttpGet("solo-shuffle")]
-        public async Task<IActionResult> SoloShuffle(string spec, string klasa, int page = 1)
+        public async Task<IActionResult> SoloShuffle(string spec, string klasa, BlizzardRegion region = BlizzardRegion.US, int page = 1)
         {
             try
             {
                 if (string.IsNullOrEmpty(spec) || string.IsNullOrEmpty(klasa))
                 {
-                    _logger.LogWarning("Missing specialization or class in SoloShuffle.");
+                    _logger.LogWarning("Missing specialization or class in Solo Shuffle.");
                     return View("Error", new ErrorViewModel { Message = "Both specialization and class are required." });
                 }
 
@@ -113,64 +123,84 @@ namespace GladiatorHub.Controllers
                 var leaderboardKey = $"shuffle-{formattedKlasa}-{formattedSpec}";
 
                 // Fetch leaderboard data
-                var currentSeason = await _leaderboardService.GetCurrentSeasonAsync();
-                var leaderboardResponse = await _leaderboardService.GetPvpLeaderboardAsync(currentSeason, leaderboardKey);
+                var currentSeason = await _leaderboardService.GetCurrentSeasonAsync(region);
+                var leaderboardResponse = await _leaderboardService.GetPvpLeaderboardAsync(region,currentSeason, leaderboardKey);
                 var leaderboardEntries = leaderboardResponse?.Data?.Entries;
 
                 if (leaderboardEntries == null || leaderboardEntries.Count == 0)
                 {
-                    _logger.LogWarning($"No leaderboard data found for specialization {spec} in class {klasa}.");
-                    return View("Error", new ErrorViewModel { Message = $"No leaderboard data found for {spec} in {klasa}." });
+                    _logger.LogWarning($"No Solo Shuffle data found for {spec} ({klasa}) in {region}.");
+                    return View("Error", new ErrorViewModel { Message = $"No leaderboard data found for {spec} in {klasa} ({region})." });
                 }
 
-                // Calculate pagination
+                // Pagination logic
                 int totalEntries = leaderboardEntries.Count;
                 int totalPages = (int)Math.Ceiling((double)totalEntries / PageSize);
+                page = Math.Max(1, Math.Min(page, totalPages));
 
-                // Ensure page is within bounds
-                page = Math.Max(1, Math.Min(page, totalPages)); // Ensures page is at least 1 and at most totalPages
-
-                // Pagination logic
                 var paginatedEntries = leaderboardEntries
                     .Skip((page - 1) * PageSize)
                     .Take(PageSize)
                     .ToList();
 
-                // Ensure faction icons are assigned
+                // Assign faction icons dynamically
                 foreach (var entry in paginatedEntries)
                 {
                     entry.Faction.IconUrl = _gameDataService.GetFactionIconUrl(entry.Faction.Type);
                 }
 
-                // Ensure there is at least 1 page, even if it's empty
-                if (totalPages == 0)
-                    totalPages = 1;
+                // Ensure at least 1 page exists
+                if (totalPages == 0) totalPages = 1;
 
-                // Pass metadata to the view
                 ViewBag.CurrentPage = page;
                 ViewBag.TotalPages = totalPages;
-                ViewBag.Spec = spec;  // Make sure spec is stored
-                ViewBag.Klasa = klasa; // Make sure klasa is stored
-
+                ViewBag.Spec = spec;
+                ViewBag.Klasa = klasa;
+                ViewBag.Region = region;
 
                 return View("SoloShuffle", paginatedEntries);
             }
             catch (HttpRequestException httpEx)
             {
-                _logger.LogError(httpEx, "Error fetching Solo Shuffle leaderboard data from Blizzard API.");
+                _logger.LogError(httpEx, $"Error fetching Solo Shuffle leaderboard data from Blizzard API for {region}.");
                 return View("Error", new ErrorViewModel { Message = "Error connecting to Blizzard API. Please try again later." });
             }
             catch (TimeoutException timeoutEx)
             {
-                _logger.LogError(timeoutEx, "Request timed out while fetching Solo Shuffle leaderboard data.");
+                _logger.LogError(timeoutEx, $"Request timed out while fetching Solo Shuffle leaderboard data for {region}.");
                 return View("Error", new ErrorViewModel { Message = "The request timed out. Please try again later." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An unexpected error occurred while fetching Solo Shuffle leaderboard.");
+                _logger.LogError(ex, $"An unexpected error occurred while fetching Solo Shuffle leaderboard for {region}.");
                 return View("Error", new ErrorViewModel { Message = "An unexpected error occurred. Please try again later." });
             }
         }
+
+
+        [HttpGet("solo-shuffle-all-ratings")]
+        public async Task<IActionResult> SoloShuffleAll()
+        {
+            var leaderboard = await _leaderboardService.SoloShuffleAllRatingsAsync(BlizzardRegion.US);
+
+            if (leaderboard.Data == null || !leaderboard.Data.Any()) // ✅ No need for .Entries
+                return BadRequest(leaderboard.Message);
+            
+            var leaderboardEntries = leaderboard.Data
+                                                .GroupBy(entry => entry.Player.Name)   
+                                                .Select(group => group.First())         
+                                                .OrderBy(entry => entry.Rank)           
+                                                .ToList();
+
+            return View(leaderboard.Data); 
+        }
+
+
+
+
+
+
+
 
 
     }

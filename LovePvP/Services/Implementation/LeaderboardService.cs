@@ -1,24 +1,34 @@
 ﻿using GladiatorHub.Models;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
+using static GladiatorHub.Models.BlizzardSettings;
 
 namespace GladiatorHub.Services.Implementation
 {
     public class LeaderboardService : ILeaderboardService
     {
+        private readonly BlizzardSettings _settings;
         private readonly IBlizzardApiService _blizzardApiService;
         private readonly ILogger<LeaderboardService> _logger;
-        public LeaderboardService(IBlizzardApiService blizzardApiService, ILogger<LeaderboardService> logger)
+        public LeaderboardService(IOptions<BlizzardSettings> settings, IBlizzardApiService blizzardApiService, ILogger<LeaderboardService> logger)
         {
+            _settings = settings.Value;
             _blizzardApiService = blizzardApiService;
             _logger = logger;
         }
 
 
 
-        public async Task<int> GetCurrentSeasonAsync()
+        public async Task<int> GetCurrentSeasonAsync(BlizzardRegion region = BlizzardRegion.US)
         {
+            if (!_settings.ApiBaseUrls.TryGetValue(region, out var apiBaseUrl))
+            {
+                throw new Exception($"Unsupported region: {region}");
+            }
+
             var accessToken = await _blizzardApiService.GetAccessTokenAsync();
-            var apiUrl = $"https://us.api.blizzard.com/data/wow/pvp-season/index?namespace=dynamic-us&locale=en_US";
+            var apiUrl = $"{apiBaseUrl}/data/wow/pvp-season/index?namespace=dynamic-{region.ToString().ToLower()}&locale=en_US";
+
 
             try
             {
@@ -37,10 +47,15 @@ namespace GladiatorHub.Services.Implementation
                 throw new Exception($"Error fetching current season: {ex.Message}", ex);
             }
         }
-        public async Task<ApiResponseModel<PvpLeaderboardModel>> GetPvpLeaderboardAsync(int pvpSeasonId, string pvpBracket, int page = 1, int pageSize = 100)
+        public async Task<ApiResponseModel<PvpLeaderboardModel>> GetPvpLeaderboardAsync(BlizzardRegion region, int pvpSeasonId, string pvpBracket, int page = 1, int pageSize = 100)
         {
+            if (!_settings.ApiBaseUrls.TryGetValue(region, out var apiBaseUrl))
+            {
+                throw new Exception($"Unsupported region: {region}");
+            }
+
             var accessToken = await _blizzardApiService.GetAccessTokenAsync();
-            var apiUrl = $"https://us.api.blizzard.com/data/wow/pvp-season/{pvpSeasonId}/pvp-leaderboard/{pvpBracket}?namespace=dynamic-us&locale=en_US&page={page}&page_size={pageSize}";
+            var apiUrl = $"{apiBaseUrl}/data/wow/pvp-season/{pvpSeasonId}/pvp-leaderboard/{pvpBracket}?namespace=dynamic-{region.ToString().ToLower()}&locale=en_US&page={page}&page_size={pageSize}";
 
             try
             {
@@ -79,13 +94,8 @@ namespace GladiatorHub.Services.Implementation
                             }
                         });
                     }
-
-                    // If the API response provides "next" or similar for pagination, handle it here.
-                    if (jsonDoc.RootElement.TryGetProperty("next", out var nextPage))
-                    {
-                        // Add logic to handle the next page link if provided in the API response.
-                    }
                 }
+
 
                 return new ApiResponseModel<PvpLeaderboardModel>
                 {
@@ -105,7 +115,53 @@ namespace GladiatorHub.Services.Implementation
         }
 
 
+        public async Task<ApiResponseModel<List<LeaderboardEntry>>> SoloShuffleAllRatingsAsync(BlizzardRegion region)
+        {
+            if (!_settings.ApiBaseUrls.TryGetValue(region, out var apiBaseUrl))
+            {
+                throw new Exception($"Unsupported region: {region}");
+            }
 
+            var accessToken = await _blizzardApiService.GetAccessTokenAsync();
+            var seasonId = await GetCurrentSeasonAsync(region);
+            var apiUrl = $"{apiBaseUrl}/data/wow/pvp-season/{seasonId}/pvp-leaderboard/?namespace=dynamic-{region.ToString().ToLower()}&locale=en_US";
+
+            try
+            {
+                var jsonDoc = await _blizzardApiService.SafeFetchJsonAsync(apiUrl, accessToken);
+                var leaderboards = jsonDoc.RootElement.GetProperty("leaderboards");
+
+                List<LeaderboardEntry> allRatings = new List<LeaderboardEntry>();
+
+                foreach (var leaderboard in leaderboards.EnumerateArray())
+                {
+                    string leaderboardUrl = leaderboard.GetProperty("key").GetProperty("href").GetString();
+                    string bracket = leaderboard.GetProperty("name").GetString();
+
+                    // Fetch ratings from each leaderboard
+                    var leaderboardEntries = await GetPvpLeaderboardAsync(region, seasonId, bracket);
+                    if (leaderboardEntries.Data != null)
+                    {
+                        allRatings.AddRange(leaderboardEntries.Data.Entries);
+                    }
+                }
+
+                return new ApiResponseModel<List<LeaderboardEntry>>
+                {
+                    Data = allRatings,
+                    Message = "Success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching all PvP leaderboards.");
+                return new ApiResponseModel<List<LeaderboardEntry>>
+                {
+                    Data = null,
+                    Message = $"Error: {ex.Message}"
+                };
+            }
+        }
 
 
 

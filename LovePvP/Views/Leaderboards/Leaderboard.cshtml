@@ -1,3 +1,6 @@
 ﻿@model List<LeaderboardEntry>
-<h1>@ViewBag.GameMode Leaderboard</h1>
+<h1>@ViewBag.GameMode Leaderboard- @ViewBag.Region</h1>
+
 @Html.Partial("_LeaderboardTable", Model)
+
+

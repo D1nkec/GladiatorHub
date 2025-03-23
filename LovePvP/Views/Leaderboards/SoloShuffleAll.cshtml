@@ -1,0 +1,60 @@
+﻿@model List<LeaderboardEntry>
+
+@{
+    ViewData["Title"] = "Solo Shuffle Leaderboard";
+}
+
+<h2>Solo Shuffle All Ratings</h2>
+
+@if (Model != null && Model.Any())
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Faction</th>
+                <th>Rating</th>
+                <th>Wins</th>
+                <th>Losses</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model)
+            {
+                <tr>
+                    <td>@entry.Rank</td>
+                    <td>@entry.Player.Name</td>
+                    <td>
+                        <img src="@entry.Faction.IconUrl" alt="@entry.Faction.Type" style="width: 20px; height: 20px;" />
+                        @entry.Faction.Type
+                    </td>
+                    <td>@entry.Rating</td>
+                    <td>@entry.SeasonMatchStatistics.Won</td>
+                    <td>@entry.SeasonMatchStatistics.Lost</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        @if (ViewBag.CurrentPage > 1)
+        {
+            <a href="@Url.Action("SoloShuffleAll", new { page = ViewBag.CurrentPage - 1 })" class="btn btn-secondary">Previous</a>
+        }
+
+        <span>Page @ViewBag.CurrentPage of @ViewBag.TotalPages</span>
+
+        @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+        {
+            <a href="@Url.Action("SoloShuffleAll", new { page = ViewBag.CurrentPage + 1 })" class="btn btn-secondary">Next</a>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        No leaderboard data found.
+    </div>
+}

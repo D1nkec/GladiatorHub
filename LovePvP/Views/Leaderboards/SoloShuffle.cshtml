@@ -1,41 +1,62 @@
 ﻿@model List<LeaderboardEntry>
 
-<h2>Solo Shuffle Leaderboard for @ViewBag.Spec</h2>
+<h2 class="text-center mb-4">Solo Shuffle Leaderboard for @ViewBag.Spec</h2>
+<h3 class="text-center mb-4">Region -@ViewBag.Region </h3>
 
+<!-- Card for Region Selection -->
+<div class="card my-4" style="max-width: 18rem; margin-left: auto; margin-right: auto;">
+    <div class="card-header text-center">
+        <strong>Select Region</strong>
+    </div>
+    <div class="card-body">
+        <!-- Buttons for Region Selection stacked vertically -->
+        <div class="btn-group-vertical w-100">
+            <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", region = "US", page = ViewBag.CurrentPage })" class="btn btn-outline-primary w-100 mb-2">
+                US
+            </a>
+            <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", region = "EU", page = ViewBag.CurrentPage })" class="btn btn-outline-primary w-100">
+                EU
+            </a>
+        </div>
+    </div>
+</div>
 
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Rank</th>
-            <th>Player Name</th>
-            <th>Realm</th>
-            <th>Faction</th>
-            <th>Rating</th>
-            <th>Matches Played</th>
-            <th>Matches Won</th>
-            <th>Matches Lost</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var entry in Model)
-        {
+<!-- Leaderboard Table -->
+<div class="table-responsive">
+    <table class="table table-bordered table-hover table-striped">
+        <thead class="thead-light">
             <tr>
-                <td>@entry.Rank</td>
-                <td>@entry.Player.Name</td>
-                <td>@entry.Player.Realm.Slug</td>
-                <td>
-                    <img src="@entry.Faction.IconUrl"
-                         style="width: 20px; height: 20px;" />
-                </td>
-                <td>@entry.Rating</td>
-                <td>@entry.SeasonMatchStatistics.Played</td>
-                <td>@entry.SeasonMatchStatistics.Won</td>
-                <td>@entry.SeasonMatchStatistics.Lost</td>
+                <th>Rank</th>
+                <th>Player Name</th>
+                <th>Realm</th>
+                <th>Faction</th>
+                <th>Rating</th>
+                <th>Matches Played</th>
+                <th>Matches Won</th>
+                <th>Matches Lost</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model)
+            {
+                <tr>
+                    <td>@entry.Rank</td>
+                    <td>@entry.Player.Name</td>
+                    <td>@entry.Player.Realm.Slug</td>
+                    <td>
+                        <img src="@entry.Faction.IconUrl" style="width: 20px; height: 20px;" />
+                    </td>
+                    <td>@entry.Rating</td>
+                    <td>@entry.SeasonMatchStatistics.Played</td>
+                    <td>@entry.SeasonMatchStatistics.Won</td>
+                    <td>@entry.SeasonMatchStatistics.Lost</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination Section -->
 <div class="d-flex justify-content-center my-4">
     <nav>
         <ul class="pagination pagination-sm">
@@ -43,7 +64,9 @@
             @if (ViewBag.CurrentPage > 1)
             {
                 <li class="page-item">
-                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", page = ViewBag.CurrentPage - 1 })" class="page-link">Previous</a>
+                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", region = ViewBag.Region ?? "US", page = ViewBag.CurrentPage - 1 })" class="page-link">
+                        <i class="bi bi-arrow-left-circle"></i> Previous
+                    </a>
                 </li>
             }
 
@@ -58,7 +81,7 @@
             @if (startPage > 1)
             {
                 <li class="page-item">
-                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", page = 1 })" class="page-link">1</a>
+                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", region = ViewBag.Region ?? "US", page = 1 })" class="page-link">1</a>
                 </li>
                 @if (startPage > 2)
                 {
@@ -71,7 +94,7 @@
             @for (int i = startPage; i <= endPage; i++)
             {
                 <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
-                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", page = i })" class="page-link">@i</a>
+                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", region = ViewBag.Region ?? "US", page = i })" class="page-link">@i</a>
                 </li>
             }
 
@@ -84,7 +107,7 @@
                     </li>
                 }
                 <li class="page-item">
-                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", page = ViewBag.TotalPages })" class="page-link">@ViewBag.TotalPages</a>
+                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", region = ViewBag.Region ?? "US", page = ViewBag.TotalPages })" class="page-link">@ViewBag.TotalPages</a>
                 </li>
             }
 
@@ -92,12 +115,12 @@
             @if (ViewBag.CurrentPage < ViewBag.TotalPages)
             {
                 <li class="page-item">
-                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", page = ViewBag.CurrentPage + 1 })" class="page-link">Next</a>
+                    <a href="@Url.Action("SoloShuffle", new { spec = ViewBag.Spec ?? "default-spec", klasa = ViewBag.Klasa ?? "default-klasa", region = ViewBag.Region ?? "US", page = ViewBag.CurrentPage + 1 })" class="page-link">
+                        Next <i class="bi bi-arrow-right-circle"></i>
+                    </a>
                 </li>
             }
         </ul>
     </nav>
 </div>
-
-
 

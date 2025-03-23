@@ -22,7 +22,9 @@ public class LeaderboardEntry
 public class Player
 {
    
-    public string Name { get; set; }
+    public string Name { get; set; } 
+
+    
 
     public Realm Realm { get; set; }
 }

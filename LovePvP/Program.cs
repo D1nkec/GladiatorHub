@@ -3,6 +3,7 @@ using GladiatorHub.Models;
 using GladiatorHub.Services.Implementation;
 using GladiatorHub.Services.Interface;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 
 
@@ -12,7 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
 // Bind the BlizzardSettings from the configuration
-builder.Services.Configure<BlizzardSettings>(builder.Configuration.GetSection("Blizzard"));
+builder.Services.Configure<BlizzardSettings>(builder.Configuration.GetSection("BlizzardSettings"));
+builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<BlizzardSettings>>().Value);
+
 builder.Services.AddHttpClient();
 // Add services to the container.
 builder.Services.AddControllersWithViews();

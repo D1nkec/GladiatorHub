@@ -7,14 +7,16 @@ using System.Text.Json;
 public class BlizzardApiService : IBlizzardApiService
 {
 
-    private readonly IConfiguration _configuration;
+  
     private readonly BlizzardSettings _settings;
     private readonly HttpClient _httpClient;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<BlizzardApiService> _logger;
+
     private string _accessToken;
     private DateTime _tokenExpiration;
 
-    public BlizzardApiService(IHttpClientFactory httpClientFactory, IOptions<BlizzardSettings> settings, IConfiguration configuration, ILogger<BlizzardApiService> logger)
+    public BlizzardApiService(IOptions<BlizzardSettings> settings, IHttpClientFactory httpClientFactory,  IConfiguration configuration, ILogger<BlizzardApiService> logger)
     {
         _settings = settings.Value;
         _httpClient = httpClientFactory.CreateClient();
